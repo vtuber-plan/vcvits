@@ -73,7 +73,7 @@ def main():
     collate_fn = TextAudioCollate()
     train_loader = DataLoader(train_dataset, num_workers=8, shuffle=False, pin_memory=True, collate_fn=collate_fn)
 
-    model = VITS()
+    model = VITS(hparams)
     
     trainer = pl.Trainer(limit_train_batches=100, max_epochs=1)
     trainer.fit(model=model, train_dataloaders=train_loader)

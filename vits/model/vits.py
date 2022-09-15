@@ -3,9 +3,10 @@ import pytorch_lightning as pl
 
 from .synthesizer_trn import SynthesizerTrn
 from .multi_period_discriminator import MultiPeriodDiscriminator
+from ..text.symbols import symbols
 
 class VITS(pl.LightningModule):
-    def __init__(self):
+    def __init__(self, hps):
         super().__init__()
         net_g = SynthesizerTrn(
             len(symbols),
