@@ -15,7 +15,7 @@ from torch.cuda.amp import autocast, GradScaler
 
 import commons
 import utils
-from data_utils import (
+from vits.data_utils import (
   TextAudioSpeakerLoader,
   TextAudioSpeakerCollate,
   DistributedBucketSampler

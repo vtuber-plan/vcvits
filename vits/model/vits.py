@@ -1,10 +1,8 @@
 
 import pytorch_lightning as pl
 
-from models import (
-  SynthesizerTrn,
-  MultiPeriodDiscriminator,
-)
+from .synthesizer_trn import SynthesizerTrn
+from .multi_period_discriminator import MultiPeriodDiscriminator
 
 class VITS(pl.LightningModule):
     def __init__(self):
