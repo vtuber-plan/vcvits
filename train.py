@@ -9,7 +9,7 @@ from torch.nn import functional as F
 from torch.utils.data import DataLoader
 from torch.nn.parallel import DistributedDataParallel as DDP
 
-import utils
+import vits.utils as utils
 from vits.data.collate import (
   TextAudioCollate,
 )

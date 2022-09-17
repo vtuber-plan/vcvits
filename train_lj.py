@@ -14,7 +14,7 @@ from torch.nn.parallel import DistributedDataParallel as DDP
 from torch.cuda.amp import autocast, GradScaler
 
 import commons
-import utils
+import vits.utils as utils
 from vits.data_utils import (
   TextAudioLoader,
   TextAudioCollate,
