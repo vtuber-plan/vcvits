@@ -33,39 +33,6 @@ def get_hparams():
     hparams = HParams(**config)
     return hparams
 
-def old():
-    
-    if rank == 0:
-        eval_dataset = TextAudioLoader(hparams.data.validation_files, hparams.data)
-        eval_loader = DataLoader(eval_dataset, num_workers=8, shuffle=False,
-            batch_size=hparams.train.batch_size, pin_memory=True,
-            drop_last=False, collate_fn=collate_fn)
-
-    
-    optim_g = torch.optim.AdamW(
-        net_g.parameters(), 
-        hps.train.learning_rate, 
-        betas=hps.train.betas, 
-        eps=hps.train.eps)
-    optim_d = torch.optim.AdamW(
-        net_d.parameters(),
-        hps.train.learning_rate, 
-        betas=hps.train.betas, 
-        eps=hps.train.eps)
-    net_g = DDP(net_g, device_ids=[rank])
-    net_d = DDP(net_d, device_ids=[rank])
-
-    try:
-        _, _, _, epoch_str = utils.load_checkpoint(utils.latest_checkpoint_path(hps.model_dir, "G_*.pth"), net_g, optim_g)
-        _, _, _, epoch_str = utils.load_checkpoint(utils.latest_checkpoint_path(hps.model_dir, "D_*.pth"), net_d, optim_d)
-        global_step = (epoch_str - 1) * len(train_loader)
-    except:
-        epoch_str = 1
-        global_step = 0
-
-    scheduler_g = torch.optim.lr_scheduler.ExponentialLR(optim_g, gamma=hps.train.lr_decay, last_epoch=epoch_str-2)
-    scheduler_d = torch.optim.lr_scheduler.ExponentialLR(optim_d, gamma=hps.train.lr_decay, last_epoch=epoch_str-2)
-
 def main():
     hparams = get_hparams()
     train_dataset = TextAudioLoader(hparams.data.training_files, hparams.data)
