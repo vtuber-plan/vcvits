@@ -75,7 +75,15 @@ def main():
 
     model = VITS(hparams)
     
-    trainer = pl.Trainer(limit_train_batches=100, max_epochs=1)
+    trainer = pl.Trainer(
+        accelerator="cpu",
+        # devices=[0],
+        # logger=logger,
+        # max_steps=100,
+        max_epochs=100,
+        default_root_dir="./logs",
+    )
+
     trainer.fit(model=model, train_dataloaders=train_loader)
 
 if __name__ == "__main__":

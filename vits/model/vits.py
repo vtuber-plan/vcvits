@@ -1,4 +1,10 @@
 
+import torch
+from torch import nn
+from torch.nn import functional as F
+from torch import optim
+
+
 import pytorch_lightning as pl
 
 from .synthesizer_trn import SynthesizerTrn
@@ -8,12 +14,12 @@ from ..text.symbols import symbols
 class VITS(pl.LightningModule):
     def __init__(self, hps):
         super().__init__()
-        net_g = SynthesizerTrn(
+        self.net_g = SynthesizerTrn(
             len(symbols),
             hps.data.filter_length // 2 + 1,
             hps.train.segment_size // hps.data.hop_length,
             **hps.model)
-        net_d = MultiPeriodDiscriminator(hps.model.use_spectral_norm)
+        self.net_d = MultiPeriodDiscriminator(hps.model.use_spectral_norm)
 
     def training_step(self, batch, batch_idx):
         # training_step defines the train loop.

@@ -1,0 +1,126 @@
+ChinoCorpus/CNZFL002.wav|コーヒーには自信があります。ぜひ、お立ち寄りください。
+ChinoCorpus/CN404010.wav|先生、ヘンテコな声を出して教室中が大笑いだったんですが、マヤさんの時も私たちの笑い止まらなくなって――
+ChinoCorpus/CNB41004.wav|とりあえず着替えてくると言ってましたが――
+ChinoCorpus/CNA42009.wav|（これは……私が欲しかったパズルと、　かわいいオルゴール！　こんな素敵なプレゼントが２つも……）
+ChinoCorpus/CN601008.wav|じゃあ、メグさんとマヤさんも誘っていいでしょうか？
+ChinoCorpus/CNA16000.wav|準備はいいですか？
+ChinoCorpus/CN10R002.wav|そうじゃなくて、この格好が、です。
+ChinoCorpus/CN151005.wav|ちょっとだけ、お姉さんになったような気がします。
+ChinoCorpus/CNA16014.wav|ココアさんが使っている粉には強力粉とありますね……。
+ChinoCorpus/CN10A006.wav|嫌です。そもそも、この制服を着るなら私よりもリゼさんの方がよかったのでは？
+ChinoCorpus/CN254014.wav|そんな、無理矢理……。
+ChinoCorpus/CN312003.wav|これではお店の評判にも大ダメージです！
+ChinoCorpus/CND34012.wav|はい。
+ChinoCorpus/CNB35007.wav|それもありますが……リゼさん、最初からサンタさんになる計画を立てていたわけじゃないんだと思います。
+ChinoCorpus/CN154001.wav|！？
+ChinoCorpus/CNA03000.wav|ふう……。
+ChinoCorpus/CN155006.wav|だめですココアさん、ぼんのーに心を奪われたら……！
+ChinoCorpus/CN216006.wav|看板メニューですか？ココアさんの作ったパンがありますよね？
+ChinoCorpus/CNA38001.wav|終わりましたね……。
+ChinoCorpus/CNC42002.wav|ココアさんの妄想です。
+ChinoCorpus/CNE22003.wav|ま、待ってください。それじゃ、クリスマスがどこかに行ってしまいます。
+ChinoCorpus/CNC23010.wav|おじいちゃんが何も知らないなら、ついてきても問題なんてありませんよね？
+ChinoCorpus/CNA32005.wav|限定メニューまで考えてもらって……こちらこそ、すみません。
+ChinoCorpus/CNB41002.wav|それは……私もですね。
+ChinoCorpus/CNC23012.wav|それから……もし宝物が見つかって、それがレシピだった場合、クリスマスメニューに使ってもいいですか？
+ChinoCorpus/CNA07015.wav|（これはもう、ココアさんにも　相談してみた方がいいのでしょうか？）
+ChinoCorpus/CN0B6000.wav|何が、だといいんですか？
+ChinoCorpus/CNZFL003.wav|あの、チラシをどうぞ。
+ChinoCorpus/CN10Q007.wav|うっ……。そんなことはありません。決めポーズの、この肘の角度を見てください。
+ChinoCorpus/CN109011.wav|大丈夫です。ちゃんと届いていますから。
+ChinoCorpus/CN10P013.wav|いえ、いただきます。
+ChinoCorpus/CN165003.wav|本当はもっと配りたかったのですが……上手くいきませんでした。
+ChinoCorpus/CN157011.wav|本当に、ココアさんは手がかかりますね。
+ChinoCorpus/CNC23001.wav|今日、おじいちゃんがいない時にみんなで宝の地図について話し合ったんです。
+ChinoCorpus/CNB23004.wav|アイスコーヒーですね。わかりました。
+ChinoCorpus/CN164003.wav|ええ～っ！？
+ChinoCorpus/CNA08002.wav|ありがとうございます。すみません、昨日も夕飯を作ってもらったのに。
+ChinoCorpus/CN501002.wav|うう……。
+ChinoCorpus/CN0A5003.wav|はい、冷めないうちに食べましょう。
+ChinoCorpus/CN501039.wav|（これも、ココアさんのおかげ……。　本当にありがとうございます）
+ChinoCorpus/CN10K012.wav|魔法を使えるなら、ココアさんにもう少し落ち着きを持ってもらえるようにしなくちゃ。
+ChinoCorpus/CN0B4012.wav|……かもしれません。それに――
+ChinoCorpus/CNC33005.wav|目をそらすということは……反対側ですね。
+ChinoCorpus/CN156001.wav|では、これは誰かの落とし物ですか。
+ChinoCorpus/CNA11021.wav|では、失礼します。
+ChinoCorpus/CN0A5036.wav|それは、確かに必要な日かもしれません！
+ChinoCorpus/CNB07000.wav|ココアさん。みんなが泊まりに来ているんですから、少しは気を遣ってください。
+ChinoCorpus/CNA08012.wav|ココアさんは食べないんですか？
+ChinoCorpus/CN0A5014.wav|では、夜食に食べられるように残しておきましょう。きっと喜んでくれます。
+ChinoCorpus/CNA16037.wav|……どうしてでしょうか？
+ChinoCorpus/CNA13012.wav|（コーヒーには自信がありますが、　クリスマスパーティーの間、ずっとコーヒーを　淹れ続けるわけにはいきませんし）
+ChinoCorpus/CNE33007.wav|これからも、ずっと信じ続けて……いつか力を取り戻してくれることを一緒にお祈りしてください。
+ChinoCorpus/CNA04001.wav|いってきます。
+ChinoCorpus/CNA22002.wav|（私、昨日の失敗のショックが大きすぎて、　焦っていたのかもしれません）
+ChinoCorpus/CNA36004.wav|はい、そうですね。みんながいればきっと何とかなります。
+ChinoCorpus/CN108007.wav|ええっ！？
+ChinoCorpus/CN201016.wav|ココアさん。何を勝手に決めてるんですか。
+ChinoCorpus/CNE06005.wav|わ、わかりました。
+ChinoCorpus/CNE21009.wav|そこまで深刻な状況なんですね。
+ChinoCorpus/CNB16002.wav|いえ、予約が今日までと思い出したのがリゼさんの連絡のあとだったので。
+ChinoCorpus/CN167001.wav|ですが、もうハロウィン本番の季節は過ぎてしまいましたよ？
+ChinoCorpus/CNB11004.wav|はい、お互いの料理のレパートリーを出し合って、作るものを決めたりしているんです。
+ChinoCorpus/CN0A6015.wav|な、なんですか？どうしてそこで驚くんですか。
+ChinoCorpus/CN0A3004.wav|それはココアさんが一方的に思っているだけです。
+ChinoCorpus/CN501034.wav|（……もしかして）
+ChinoCorpus/CNA07003.wav|（今日は、ココアさんの言うとおり　みんなに相談してみましたが……）
+ChinoCorpus/CNA21003.wav|はい、すみませんが今日もバイトはお休みします。
+ChinoCorpus/CNA08014.wav|とても香りがよくて、ふかふかでおいしいです。
+ChinoCorpus/CN323008.wav|鳥獣戯画みたいです。
+ChinoCorpus/CNZFL000.wav|構いませんが……今日はみんな揃って配ることができそうですし、そうしませんか？
+ChinoCorpus/CN10U007.wav|気にしないでください。褒めていますから。
+ChinoCorpus/CN254016.wav|私はいつだって素直です。
+ChinoCorpus/CNE14010.wav|（な、なんと言えば！？　おじいちゃん、どういうつもりなんですか！？）
+ChinoCorpus/CN0A4004.wav|やっと慣れてきたんですか。
+ChinoCorpus/CNA0A011.wav|…………。
+ChinoCorpus/CNA13002.wav|（おもてなしを考えるのも　また振り出しに戻った状態で……）
+ChinoCorpus/CNA23010.wav|いえ、せっかくですから、あんこも少し食べますか？
+ChinoCorpus/CN10W006.wav|そんなことはありませんけど……。
+ChinoCorpus/CN103003.wav|仕方ありませんね。やりましょう。
+ChinoCorpus/CNA01034.wav|（だから私も、ココアさんを――　みんなを楽しませて、　同じ気持ちをお返ししたい）
+ChinoCorpus/CN0B4001.wav|それは、チラシ配りが楽しいというより、コスプレを楽しんでるだけじゃないですか？
+ChinoCorpus/CNA39003.wav|できるものは昨日から準備していたので。それに、父にも手伝ってもらっていますから。
+ChinoCorpus/CN351001.wav|それは……ちょっと難しいと思いますが。
+ChinoCorpus/CNE21000.wav|私たちにも？それは何でしょう？
+ChinoCorpus/CNC42001.wav|あんことティッピーのマジパンが乗ってます……！
+ChinoCorpus/CN107004.wav|うう……。
+ChinoCorpus/CN175000.wav|眠れないとつらいですよね。少し休んでください。
+ChinoCorpus/CNA01018.wav|（ど、どうしろと！？）
+ChinoCorpus/CNA37003.wav|９つです。
+ChinoCorpus/CNA23001.wav|と、いうか……えっと、千夜さん、これは……。
+ChinoCorpus/CNA11018.wav|え？　いいんですか？
+ChinoCorpus/CNA16021.wav|では、もう少しだけ追加しましょう。粉をふるう時、少しだけこぼしてしまったので。
+ChinoCorpus/CN313001.wav|羊喫茶……！それはすごくもふもふでいいです！
+ChinoCorpus/CNB42001.wav|リゼさん。ピンセット、ありがとうございました。おかげでボトルシップ製作が捗りそうです。
+ChinoCorpus/CNA16027.wav|い、いいんでしょうか？いらないから取り除いたんじゃ……。
+ChinoCorpus/CN221012.wav|ですが、この街にはそこまで大きな森はありませんよ？
+ChinoCorpus/CN10K000.wav|一緒にって……。
+ChinoCorpus/CNA05009.wav|（おいしいご馳走ですか。　ふむふむ……）
+ChinoCorpus/CNC25004.wav|おじいちゃん。宝探し、みんな楽しそうですね。
+ChinoCorpus/CN169001.wav|安心？どうかしたんですか？
+ChinoCorpus/CN0B2009.wav|え？　いいですけど、何を……。
+ChinoCorpus/CNE22012.wav|ココアさん、何をしてるんですか？
+ChinoCorpus/CN302008.wav|あ、えっと、その……ココアさんがいつも姉妹だと言ってるからつられただけです、それだけですから！
+ChinoCorpus/CNA16005.wav|とりあえず、練習のつもりで１度作ってみましょう。
+ChinoCorpus/CNA02003.wav|そうでしょうか？たまには、新しいメニューに挑戦してみようかと思いまして。
+ChinoCorpus/CN301005.wav|わ、わかりました。頑張ります。
+ChinoCorpus/CN15A010.wav|はい、そうです。覚えてくれてたんですね。
+ChinoCorpus/CNA33000.wav|最後に、この部分にクリームを――
+ChinoCorpus/CN107009.wav|別に、そんなこと、確認しなくても……。
+ChinoCorpus/CNA23026.wav|はい、お菓子のケーキの作り方です。
+ChinoCorpus/CNA25000.wav|だめです。
+ChinoCorpus/CN0B5006.wav|ココアさんは、お客さんの前でも自由すぎます。
+ChinoCorpus/CNE13001.wav|そうですか。あの、中には誰かいたんですか？
+ChinoCorpus/CN157012.wav|べ、別に、そういうのじゃありません。苦しそうだったから放っておけなかっただけです。
+ChinoCorpus/CNE04010.wav|いえ、お粗末様でした。満足してもらえたのなら嬉しいです。
+ChinoCorpus/CND42010.wav|ふう……。
+ChinoCorpus/CNZFL003.wav|あの、チラシをどうぞ。
+ChinoCorpus/CN165002.wav|私も、リゼさんの勲章、欲しいです。ココアさんには負けません。
+ChinoCorpus/CNB41006.wav|大丈夫ですよ。確かにココアさんは起きてますが、まだ遅刻ではありません。
+ChinoCorpus/CN16A001.wav|え……。
+ChinoCorpus/CN351002.wav|…………。
+ChinoCorpus/CN10R008.wav|こ、ココアさん、やっぱりこの格好は大胆すぎないでしょうか？知り合いに見られたらはずかしいです……。
+ChinoCorpus/CNA32013.wav|ココアさんにも自制心があったんですね。偉いです。
+ChinoCorpus/CN152001.wav|ええっ！？　吹き矢部ですか？
+ChinoCorpus/CN10B006.wav|どうしてそうなるんですか！
+ChinoCorpus/CN10Q012.wav|結局、最後には２人とも偽者だとバレてしまいましたね。
