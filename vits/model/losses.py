@@ -14,7 +14,6 @@ def feature_loss(fmap_r, fmap_g):
 
   return loss * 2 
 
-
 def discriminator_loss(disc_real_outputs, disc_generated_outputs):
   loss = 0
   r_losses = []

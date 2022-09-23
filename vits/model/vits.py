@@ -106,7 +106,6 @@ class VITS(pl.LightningModule):
             grad_norm_d = commons.clip_grad_value_(self.net_d.parameters(), None)
 
             # log
-
             lr = self.optim_g.param_groups[0]['lr']
             scalar_dict = {"loss/d/total": loss_disc_all, "learning_rate": lr, "grad_norm_d": grad_norm_d}
             scalar_dict.update({"loss/d_r/{}".format(i): v for i, v in enumerate(losses_disc_r)})
@@ -123,6 +122,58 @@ class VITS(pl.LightningModule):
                 scalars=scalar_dict)
 
             return loss_disc_all
+
+    def validation_step(self, batch, batch_idx):
+        self.net_g.eval()
+        
+        x, x_lengths, spec, spec_lengths, y, y_lengths = batch
+
+        # remove else
+        x = x[:1]
+        x_lengths = x_lengths[:1]
+        spec = spec[:1]
+        spec_lengths = spec_lengths[:1]
+        y = y[:1]
+        y_lengths = y_lengths[:1]
+
+        y_hat, attn, mask, *_ = self.net_g.infer(x, x_lengths, max_len=1000)
+        y_hat_lengths = mask.sum([1,2]).long() * self.hps.data.hop_length
+
+        mel = spec_to_mel_torch(
+            spec, 
+            self.hps.data.filter_length, 
+            self.hps.data.n_mel_channels, 
+            self.hps.data.sampling_rate,
+            self.hps.data.mel_fmin, 
+            self.hps.data.mel_fmax)
+        y_hat_mel = mel_spectrogram_torch(
+            y_hat.squeeze(1).float(),
+            self.hps.data.filter_length,
+            self.hps.data.n_mel_channels,
+            self.hps.data.sampling_rate,
+            self.hps.data.hop_length,
+            self.hps.data.win_length,
+            self.hps.data.mel_fmin,
+            self.hps.data.mel_fmax
+        )
+        image_dict = {
+        "gen/mel": utils.plot_spectrogram_to_numpy(y_hat_mel[0].cpu().numpy())
+        }
+        audio_dict = {
+        "gen/audio": y_hat[0,:,:y_hat_lengths[0]]
+        }
+        # if self.global_step == 0:
+        image_dict.update({"gt/mel": utils.plot_spectrogram_to_numpy(mel[0].cpu().numpy())})
+        audio_dict.update({"gt/audio": y[0,:,:y_lengths[0]]})
+
+        tensorboard = self.logger.experiment
+        utils.summarize(
+            writer=tensorboard,
+            global_step=self.global_step, 
+            images=image_dict,
+            audios=audio_dict,
+            audio_sampling_rate=self.hps.data.sampling_rate
+            )
 
 
     def configure_optimizers(self):

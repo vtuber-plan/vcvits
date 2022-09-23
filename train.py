@@ -36,16 +36,18 @@ def get_hparams():
 def main():
     hparams = get_hparams()
     train_dataset = TextAudioLoader(hparams.data.training_files, hparams.data)
+    valid_dataset = TextAudioLoader(hparams.data.validation_files, hparams.data)
 
     collate_fn = TextAudioCollate()
     train_loader = DataLoader(train_dataset, batch_size=hparams.train.batch_size, num_workers=16, shuffle=False, pin_memory=True, collate_fn=collate_fn)
+    valid_loader = DataLoader(valid_dataset, batch_size=1, num_workers=16, shuffle=False, pin_memory=True, collate_fn=collate_fn)
 
     model = VITS(hparams)
     
     trainer = pl.Trainer(
         accelerator="gpu",
-        devices=[2, 3],
-        strategy="ddp",
+        devices=[3],
+        # strategy="ddp",
         amp_backend="native",
         precision=16,
         # logger=logger,
@@ -54,7 +56,7 @@ def main():
         default_root_dir="./logs",
     )
 
-    trainer.fit(model=model, train_dataloaders=train_loader)
+    trainer.fit(model=model, train_dataloaders=train_loader, val_dataloaders=valid_loader)
 
 if __name__ == "__main__":
   main()
