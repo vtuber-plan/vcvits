@@ -22,7 +22,7 @@ from vits.data.dataset import TextAudioLoader, TextAudioSpeakerLoader
 
 def get_hparams():
     parser = argparse.ArgumentParser()
-    parser.add_argument('-c', '--config', type=str, default="./configs/base.json", help='JSON file for configuration')
+    parser.add_argument('-c', '--config', type=str, default="./configs/ljs_base.json", help='JSON file for configuration')
     # parser.add_argument('-m', '--model', type=str, required=True, help='Model name')
     args = parser.parse_args()
 
@@ -43,8 +43,8 @@ def main():
     model = VITS(hparams)
     
     trainer = pl.Trainer(
-        accelerator="cpu",
-        # devices=[0],
+        accelerator="gpu",
+        devices=[1],
         # logger=logger,
         # max_steps=100,
         max_epochs=100,
