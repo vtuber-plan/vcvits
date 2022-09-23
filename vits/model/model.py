@@ -47,6 +47,7 @@ class StochasticDurationPredictor(nn.Module):
     if gin_channels != 0:
       self.cond = nn.Conv1d(gin_channels, filter_channels, 1)
 
+  # @profile
   def forward(self, x, x_mask, w=None, g=None, reverse=False, noise_scale=1.0):
     x = torch.detach(x)
     x = self.pre(x)
@@ -115,6 +116,7 @@ class DurationPredictor(nn.Module):
     if gin_channels != 0:
       self.cond = nn.Conv1d(gin_channels, in_channels, 1)
 
+  # @profile
   def forward(self, x, x_mask, g=None):
     x = torch.detach(x)
     if g is not None:
@@ -164,6 +166,7 @@ class TextEncoder(nn.Module):
       p_dropout)
     self.proj= nn.Conv1d(hidden_channels, out_channels * 2, 1)
 
+  # @profile
   def forward(self, x, x_lengths):
     x = self.emb(x) * math.sqrt(self.hidden_channels) # [b, t, h]
     x = torch.transpose(x, 1, -1) # [b, h, t]

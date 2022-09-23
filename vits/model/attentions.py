@@ -134,7 +134,7 @@ class MultiHeadAttention(nn.Module):
       with torch.no_grad():
         self.conv_k.weight.copy_(self.conv_q.weight)
         self.conv_k.bias.copy_(self.conv_q.bias)
-      
+  
   def forward(self, x, c, attn_mask=None):
     q = self.conv_q(x)
     k = self.conv_k(c)

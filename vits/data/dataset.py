@@ -37,7 +37,7 @@ class TextAudioLoader(torch.utils.data.Dataset):
         random.shuffle(self.audiopaths_and_text)
         self._filter()
 
-
+    # @profile
     def _filter(self):
         """
         Filter text & store spec lengths
@@ -55,6 +55,7 @@ class TextAudioLoader(torch.utils.data.Dataset):
         self.audiopaths_and_text = audiopaths_and_text_new
         self.lengths = lengths
 
+    # @profile
     def get_audio_text_pair(self, audiopath_and_text):
         # separate filename and text
         audiopath, text = audiopath_and_text[0], audiopath_and_text[1]
@@ -62,6 +63,7 @@ class TextAudioLoader(torch.utils.data.Dataset):
         spec, wav = self.get_audio(audiopath)
         return (text, spec, wav)
 
+    # @profile
     def get_audio(self, filename):
         audio, sampling_rate = load_wav_to_torch(filename)
         if sampling_rate != self.sampling_rate:
@@ -80,6 +82,7 @@ class TextAudioLoader(torch.utils.data.Dataset):
             torch.save(spec, spec_filename)
         return spec, audio_norm
 
+    # @profile
     def get_text(self, text):
         if self.cleaned_text:
             text_norm = cleaned_text_to_sequence(text)

@@ -37,6 +37,7 @@ class Generator(torch.nn.Module):
         if gin_channels != 0:
             self.cond = nn.Conv1d(gin_channels, upsample_initial_channel, 1)
 
+    # @profile
     def forward(self, x, g=None):
         x = self.conv_pre(x)
         if g is not None:

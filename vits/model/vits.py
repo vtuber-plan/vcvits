@@ -28,58 +28,36 @@ class VITS(pl.LightningModule):
         self.hps = hps
         self.epoch_str = 1
 
+        self.generator_out = None
+
     def training_step(self, batch, batch_idx, optimizer_idx):
         x, x_lengths, spec, spec_lengths, y, y_lengths = batch
-
-        y_hat, l_length, attn, ids_slice, x_mask, z_mask, (z, z_p, m_p, logs_p, m_q, logs_q) = self.net_g(x, x_lengths, spec, spec_lengths)
-
-        mel = spec_to_mel_torch(
-            spec, 
-            self.hps.data.filter_length, 
-            self.hps.data.n_mel_channels, 
-            self.hps.data.sampling_rate,
-            self.hps.data.mel_fmin, 
-            self.hps.data.mel_fmax)
-        y_mel = commons.slice_segments(mel, ids_slice, self.hps.train.segment_size // self.hps.data.hop_length)
-        y_hat_mel = mel_spectrogram_torch(
-            y_hat.squeeze(1), 
-            self.hps.data.filter_length, 
-            self.hps.data.n_mel_channels, 
-            self.hps.data.sampling_rate, 
-            self.hps.data.hop_length, 
-            self.hps.data.win_length, 
-            self.hps.data.mel_fmin, 
-            self.hps.data.mel_fmax
-        )
-
-        y = commons.slice_segments(y, ids_slice * self.hps.data.hop_length, self.hps.train.segment_size) # slice 
-
-        # Discriminator
-        if optimizer_idx == 0:
-            y_d_hat_r, y_d_hat_g, _, _ = self.net_d(y, y_hat.detach())
-            loss_disc, losses_disc_r, losses_disc_g = discriminator_loss(y_d_hat_r, y_d_hat_g)
-            loss_disc_all = loss_disc
-
-            grad_norm_d = commons.clip_grad_value_(self.net_d.parameters(), None)
-
-            # log
-            lr = self.optim_g.param_groups[0]['lr']
-            scalar_dict = {"loss/d/total": loss_disc_all, "learning_rate": lr, "grad_norm_d": grad_norm_d}
-            scalar_dict.update({"loss/d_r/{}".format(i): v for i, v in enumerate(losses_disc_r)})
-            scalar_dict.update({"loss/d_g/{}".format(i): v for i, v in enumerate(losses_disc_g)})
-
-            tensorboard = self.logger.experiment
-
-            utils.summarize(
-                writer=tensorboard,
-                global_step=self.global_step, 
-                images={},
-                scalars=scalar_dict)
-
-            return loss_disc_all
-
+        
         # Generator
-        if optimizer_idx == 1:
+        if optimizer_idx == 0:
+            self.generator_out = self.net_g(x, x_lengths, spec, spec_lengths)
+            y_hat, l_length, attn, ids_slice, x_mask, z_mask, (z, z_p, m_p, logs_p, m_q, logs_q) = self.generator_out
+            y = commons.slice_segments(y, ids_slice * self.hps.data.hop_length, self.hps.train.segment_size) # slice
+
+            mel = spec_to_mel_torch(
+                spec, 
+                self.hps.data.filter_length, 
+                self.hps.data.n_mel_channels, 
+                self.hps.data.sampling_rate,
+                self.hps.data.mel_fmin, 
+                self.hps.data.mel_fmax)
+            y_mel = commons.slice_segments(mel, ids_slice, self.hps.train.segment_size // self.hps.data.hop_length)
+            y_hat_mel = mel_spectrogram_torch(
+                y_hat.squeeze(1), 
+                self.hps.data.filter_length, 
+                self.hps.data.n_mel_channels, 
+                self.hps.data.sampling_rate, 
+                self.hps.data.hop_length, 
+                self.hps.data.win_length, 
+                self.hps.data.mel_fmin, 
+                self.hps.data.mel_fmax
+            )
+
             y_d_hat_r, y_d_hat_g, fmap_r, fmap_g = self.net_d(y, y_hat)
             loss_dur = torch.sum(l_length.float())
             loss_mel = F.l1_loss(y_mel, y_hat_mel) * self.hps.train.c_mel
@@ -98,12 +76,15 @@ class VITS(pl.LightningModule):
 
             scalar_dict.update({"loss/g/{}".format(i): v for i, v in enumerate(losses_gen)})
 
+            '''
             image_dict = { 
                 "slice/mel_org": utils.plot_spectrogram_to_numpy(y_mel[0].data.cpu().numpy()),
                 "slice/mel_gen": utils.plot_spectrogram_to_numpy(y_hat_mel[0].data.cpu().numpy()), 
                 "all/mel": utils.plot_spectrogram_to_numpy(mel[0].data.cpu().numpy()),
                 "all/attn": utils.plot_alignment_to_numpy(attn[0,0].data.cpu().numpy())
             }
+            '''
+            image_dict = {}
             
             tensorboard = self.logger.experiment
             utils.summarize(
@@ -112,6 +93,37 @@ class VITS(pl.LightningModule):
                 images=image_dict,
                 scalars=scalar_dict)
             return loss_gen_all
+    
+        # Discriminator
+        if optimizer_idx == 1:
+            y_hat, l_length, attn, ids_slice, x_mask, z_mask, (z, z_p, m_p, logs_p, m_q, logs_q) = self.generator_out
+            y = commons.slice_segments(y, ids_slice * self.hps.data.hop_length, self.hps.train.segment_size) # slice 
+            
+            y_d_hat_r, y_d_hat_g, _, _ = self.net_d(y, y_hat.detach())
+            loss_disc, losses_disc_r, losses_disc_g = discriminator_loss(y_d_hat_r, y_d_hat_g)
+            loss_disc_all = loss_disc
+
+            grad_norm_d = commons.clip_grad_value_(self.net_d.parameters(), None)
+
+            # log
+
+            lr = self.optim_g.param_groups[0]['lr']
+            scalar_dict = {"loss/d/total": loss_disc_all, "learning_rate": lr, "grad_norm_d": grad_norm_d}
+            scalar_dict.update({"loss/d_r/{}".format(i): v for i, v in enumerate(losses_disc_r)})
+            scalar_dict.update({"loss/d_g/{}".format(i): v for i, v in enumerate(losses_disc_g)})
+
+            image_dict = {}
+            
+            tensorboard = self.logger.experiment
+
+            utils.summarize(
+                writer=tensorboard,
+                global_step=self.global_step, 
+                images=image_dict,
+                scalars=scalar_dict)
+
+            return loss_disc_all
+
 
     def configure_optimizers(self):
         
@@ -128,4 +140,4 @@ class VITS(pl.LightningModule):
         self.scheduler_g = torch.optim.lr_scheduler.ExponentialLR(self.optim_g, gamma=self.hps.train.lr_decay, last_epoch=self.epoch_str-2)
         self.scheduler_d = torch.optim.lr_scheduler.ExponentialLR(self.optim_d, gamma=self.hps.train.lr_decay, last_epoch=self.epoch_str-2)
 
-        return [self.optim_d, self.optim_g], [self.scheduler_d, self.scheduler_g]
+        return [self.optim_g, self.optim_d], [self.scheduler_g, self.scheduler_d]

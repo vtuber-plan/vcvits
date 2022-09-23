@@ -38,13 +38,16 @@ def main():
     train_dataset = TextAudioLoader(hparams.data.training_files, hparams.data)
 
     collate_fn = TextAudioCollate()
-    train_loader = DataLoader(train_dataset, num_workers=8, shuffle=False, pin_memory=True, collate_fn=collate_fn)
+    train_loader = DataLoader(train_dataset, batch_size=hparams.train.batch_size, num_workers=16, shuffle=False, pin_memory=True, collate_fn=collate_fn)
 
     model = VITS(hparams)
     
     trainer = pl.Trainer(
         accelerator="gpu",
-        devices=[1],
+        devices=[2, 3],
+        strategy="ddp",
+        amp_backend="native",
+        precision=16,
         # logger=logger,
         # max_steps=100,
         max_epochs=100,

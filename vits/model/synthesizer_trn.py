@@ -86,6 +86,7 @@ class SynthesizerTrn(nn.Module):
     if n_speakers > 1:
       self.emb_g = nn.Embedding(n_speakers, gin_channels)
 
+  # @profile
   def forward(self, x, x_lengths, y, y_lengths, sid=None):
 
     x, m_p, logs_p, x_mask = self.enc_p(x, x_lengths)
