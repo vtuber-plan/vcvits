@@ -187,7 +187,11 @@ class VITS(pl.LightningModule):
             self.hparams.train.learning_rate, 
             betas=self.hparams.train.betas, 
             eps=self.hparams.train.eps)
-        self.scheduler_g = torch.optim.lr_scheduler.ExponentialLR(self.optim_g, gamma=self.hparams.train.lr_decay, last_epoch=self.current_epoch-2)
-        self.scheduler_d = torch.optim.lr_scheduler.ExponentialLR(self.optim_d, gamma=self.hparams.train.lr_decay, last_epoch=self.current_epoch-2)
+        self.scheduler_g = torch.optim.lr_scheduler.ExponentialLR(self.optim_g,
+                            gamma=self.hparams.train.lr_decay)
+        self.scheduler_g.last_epoch = self.current_epoch - 1
+        self.scheduler_d = torch.optim.lr_scheduler.ExponentialLR(self.optim_d, 
+                            gamma=self.hparams.train.lr_decay)
+        self.scheduler_d.last_epoch = self.current_epoch - 1
 
         return [self.optim_g, self.optim_d], [self.scheduler_g, self.scheduler_d]
