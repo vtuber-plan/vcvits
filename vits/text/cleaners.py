@@ -104,4 +104,5 @@ def japanese_cleaners(text):
   text = convert_to_ascii(text)
   text = lowercase(text)
   phonemes = collapse_whitespace(text)
+  phonemes = phonemes.replace("(", "").replace(")", "").replace("-", "")
   return phonemes
