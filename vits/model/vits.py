@@ -16,17 +16,16 @@ from .. import commons
 from .. import utils
 
 class VITS(pl.LightningModule):
-    def __init__(self, hps):
+    def __init__(self, **kwargs):
         super().__init__()
-        
+        self.save_hyperparameters(*[k for k in kwargs])
+
         self.net_g = SynthesizerTrn(
             len(symbols),
-            hps.data.filter_length // 2 + 1,
-            hps.train.segment_size // hps.data.hop_length,
-            **hps.model)
-        self.net_d = MultiPeriodDiscriminator(hps.model.use_spectral_norm)
-        self.hps = hps
-        self.epoch_str = 1
+            self.hparams.data.filter_length // 2 + 1,
+            self.hparams.train.segment_size // self.hparams.data.hop_length,
+            **self.hparams.model)
+        self.net_d = MultiPeriodDiscriminator(self.hparams.model.use_spectral_norm)
 
         self.generator_out = None
 
@@ -37,31 +36,31 @@ class VITS(pl.LightningModule):
         if optimizer_idx == 0:
             self.generator_out = self.net_g(x, x_lengths, spec, spec_lengths)
             y_hat, l_length, attn, ids_slice, x_mask, z_mask, (z, z_p, m_p, logs_p, m_q, logs_q) = self.generator_out
-            y = commons.slice_segments(y, ids_slice * self.hps.data.hop_length, self.hps.train.segment_size) # slice
+            y = commons.slice_segments(y, ids_slice * self.hparams.data.hop_length, self.hparams.train.segment_size) # slice
 
             mel = spec_to_mel_torch(
                 spec, 
-                self.hps.data.filter_length, 
-                self.hps.data.n_mel_channels, 
-                self.hps.data.sampling_rate,
-                self.hps.data.mel_fmin, 
-                self.hps.data.mel_fmax)
-            y_mel = commons.slice_segments(mel, ids_slice, self.hps.train.segment_size // self.hps.data.hop_length)
+                self.hparams.data.filter_length, 
+                self.hparams.data.n_mel_channels, 
+                self.hparams.data.sampling_rate,
+                self.hparams.data.mel_fmin, 
+                self.hparams.data.mel_fmax)
+            y_mel = commons.slice_segments(mel, ids_slice, self.hparams.train.segment_size // self.hparams.data.hop_length)
             y_hat_mel = mel_spectrogram_torch(
                 y_hat.squeeze(1), 
-                self.hps.data.filter_length, 
-                self.hps.data.n_mel_channels, 
-                self.hps.data.sampling_rate, 
-                self.hps.data.hop_length, 
-                self.hps.data.win_length, 
-                self.hps.data.mel_fmin, 
-                self.hps.data.mel_fmax
+                self.hparams.data.filter_length, 
+                self.hparams.data.n_mel_channels, 
+                self.hparams.data.sampling_rate, 
+                self.hparams.data.hop_length, 
+                self.hparams.data.win_length, 
+                self.hparams.data.mel_fmin, 
+                self.hparams.data.mel_fmax
             )
 
             y_d_hat_r, y_d_hat_g, fmap_r, fmap_g = self.net_d(y, y_hat)
             loss_dur = torch.sum(l_length.float())
-            loss_mel = F.l1_loss(y_mel, y_hat_mel) * self.hps.train.c_mel
-            loss_kl = kl_loss(z_p, logs_q, m_p, logs_p, z_mask) * self.hps.train.c_kl
+            loss_mel = F.l1_loss(y_mel, y_hat_mel) * self.hparams.train.c_mel
+            loss_kl = kl_loss(z_p, logs_q, m_p, logs_p, z_mask) * self.hparams.train.c_kl
 
             loss_fm = feature_loss(fmap_r, fmap_g)
             loss_gen, losses_gen = generator_loss(y_d_hat_g)
@@ -97,7 +96,7 @@ class VITS(pl.LightningModule):
         # Discriminator
         if optimizer_idx == 1:
             y_hat, l_length, attn, ids_slice, x_mask, z_mask, (z, z_p, m_p, logs_p, m_q, logs_q) = self.generator_out
-            y = commons.slice_segments(y, ids_slice * self.hps.data.hop_length, self.hps.train.segment_size) # slice 
+            y = commons.slice_segments(y, ids_slice * self.hparams.data.hop_length, self.hparams.train.segment_size) # slice 
             
             y_d_hat_r, y_d_hat_g, _, _ = self.net_d(y, y_hat.detach())
             loss_disc, losses_disc_r, losses_disc_g = discriminator_loss(y_d_hat_r, y_d_hat_g)
@@ -137,24 +136,24 @@ class VITS(pl.LightningModule):
         y_lengths = y_lengths[:1]
 
         y_hat, attn, mask, *_ = self.net_g.infer(x, x_lengths, max_len=1000)
-        y_hat_lengths = mask.sum([1,2]).long() * self.hps.data.hop_length
+        y_hat_lengths = mask.sum([1,2]).long() * self.hparams.data.hop_length
 
         mel = spec_to_mel_torch(
             spec, 
-            self.hps.data.filter_length, 
-            self.hps.data.n_mel_channels, 
-            self.hps.data.sampling_rate,
-            self.hps.data.mel_fmin, 
-            self.hps.data.mel_fmax)
+            self.hparams.data.filter_length, 
+            self.hparams.data.n_mel_channels, 
+            self.hparams.data.sampling_rate,
+            self.hparams.data.mel_fmin, 
+            self.hparams.data.mel_fmax)
         y_hat_mel = mel_spectrogram_torch(
             y_hat.squeeze(1).float(),
-            self.hps.data.filter_length,
-            self.hps.data.n_mel_channels,
-            self.hps.data.sampling_rate,
-            self.hps.data.hop_length,
-            self.hps.data.win_length,
-            self.hps.data.mel_fmin,
-            self.hps.data.mel_fmax
+            self.hparams.data.filter_length,
+            self.hparams.data.n_mel_channels,
+            self.hparams.data.sampling_rate,
+            self.hparams.data.hop_length,
+            self.hparams.data.win_length,
+            self.hparams.data.mel_fmin,
+            self.hparams.data.mel_fmax
         )
         image_dict = {
         "gen/mel": utils.plot_spectrogram_to_numpy(y_hat_mel[0].cpu().numpy())
@@ -172,7 +171,7 @@ class VITS(pl.LightningModule):
             global_step=self.global_step, 
             images=image_dict,
             audios=audio_dict,
-            audio_sampling_rate=self.hps.data.sampling_rate
+            audio_sampling_rate=self.hparams.data.sampling_rate
             )
 
 
@@ -180,15 +179,15 @@ class VITS(pl.LightningModule):
         
         self.optim_g = torch.optim.AdamW(
             self.net_g.parameters(), 
-            self.hps.train.learning_rate, 
-            betas=self.hps.train.betas, 
-            eps=self.hps.train.eps)
+            self.hparams.train.learning_rate, 
+            betas=self.hparams.train.betas, 
+            eps=self.hparams.train.eps)
         self.optim_d = torch.optim.AdamW(
             self.net_d.parameters(),
-            self.hps.train.learning_rate, 
-            betas=self.hps.train.betas, 
-            eps=self.hps.train.eps)
-        self.scheduler_g = torch.optim.lr_scheduler.ExponentialLR(self.optim_g, gamma=self.hps.train.lr_decay, last_epoch=self.epoch_str-2)
-        self.scheduler_d = torch.optim.lr_scheduler.ExponentialLR(self.optim_d, gamma=self.hps.train.lr_decay, last_epoch=self.epoch_str-2)
+            self.hparams.train.learning_rate, 
+            betas=self.hparams.train.betas, 
+            eps=self.hparams.train.eps)
+        self.scheduler_g = torch.optim.lr_scheduler.ExponentialLR(self.optim_g, gamma=self.hparams.train.lr_decay, last_epoch=self.current_epoch-2)
+        self.scheduler_d = torch.optim.lr_scheduler.ExponentialLR(self.optim_d, gamma=self.hparams.train.lr_decay, last_epoch=self.current_epoch-2)
 
         return [self.optim_g, self.optim_d], [self.scheduler_g, self.scheduler_d]

@@ -15,7 +15,7 @@ hyperparameter. Some cleaners are English-specific. You'll typically want to use
 import re
 from unidecode import unidecode
 from phonemizer import phonemize
-
+from .symbols import symbols
 
 # Regular expression matching whitespace:
 _whitespace_re = re.compile(r'\s+')
@@ -104,5 +104,11 @@ def japanese_cleaners(text):
   text = convert_to_ascii(text)
   text = lowercase(text)
   phonemes = collapse_whitespace(text)
-  phonemes = phonemes.replace("(", "").replace(")", "").replace("-", "")
-  return phonemes
+
+  out = ""
+  for c in phonemes:
+    if c in symbols:
+      out += c
+    else:
+      pass
+  return out

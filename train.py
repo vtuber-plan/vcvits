@@ -20,7 +20,7 @@ from vits.hparams import HParams
 from vits.model.vits import VITS
 from vits.data.dataset import TextAudioLoader, TextAudioSpeakerLoader
 
-def get_hparams():
+def get_hparams() -> HParams:
     parser = argparse.ArgumentParser()
     parser.add_argument('-c', '--config', type=str, default="./configs/chino_base.json", help='JSON file for configuration')
     # parser.add_argument('-m', '--model', type=str, required=True, help='Model name')
@@ -42,7 +42,7 @@ def main():
     train_loader = DataLoader(train_dataset, batch_size=hparams.train.batch_size, num_workers=16, shuffle=False, pin_memory=True, collate_fn=collate_fn)
     valid_loader = DataLoader(valid_dataset, batch_size=1, num_workers=16, shuffle=False, pin_memory=True, collate_fn=collate_fn)
 
-    model = VITS(hparams)
+    model = VITS(**hparams)
     
     trainer = pl.Trainer(
         accelerator="gpu",
@@ -54,6 +54,7 @@ def main():
         # max_steps=100,
         max_epochs=hparams.train.epochs,
         default_root_dir="./logs",
+        limit_val_batches=1
     )
 
     trainer.fit(model=model, train_dataloaders=train_loader, val_dataloaders=valid_loader)
