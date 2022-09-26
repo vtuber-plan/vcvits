@@ -6,15 +6,17 @@ from torch.nn import functional as F
 
 import vits.commons as commons
 import vits.model.modules as modules
-from . import attentions
+from . import transformer
 import monotonic_align
 
 from torch.nn import Conv1d, ConvTranspose1d, AvgPool1d, Conv2d
 from torch.nn.utils import weight_norm, remove_weight_norm, spectral_norm
 from vits.commons import init_weights, get_padding
 
-from .model import TextEncoder, PosteriorEncoder, ResidualCouplingBlock, StochasticDurationPredictor, DurationPredictor
-
+from .text_encoder import TextEncoder
+from .posterior_encoder import PosteriorEncoder
+from .flow import ResidualCouplingBlock
+from .preditor import StochasticDurationPredictor, DurationPredictor
 from .generator import Generator
 
 class SynthesizerTrn(nn.Module):
@@ -86,9 +88,7 @@ class SynthesizerTrn(nn.Module):
     if n_speakers > 1:
       self.emb_g = nn.Embedding(n_speakers, gin_channels)
 
-  # @profile
   def forward(self, x, x_lengths, y, y_lengths, sid=None):
-
     x, m_p, logs_p, x_mask = self.enc_p(x, x_lengths)
     if self.n_speakers > 0:
       g = self.emb_g(sid).unsqueeze(-1) # [b, h, 1]

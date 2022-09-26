@@ -10,7 +10,7 @@ import vits.model.modules as modules
 from vits.model.modules import LayerNorm
    
 
-class Encoder(nn.Module):
+class TransformerEncoder(nn.Module):
   def __init__(self, hidden_channels, filter_channels, n_heads, n_layers, kernel_size=1, p_dropout=0., window_size=4, **kwargs):
     super().__init__()
     self.hidden_channels = hidden_channels
@@ -47,7 +47,7 @@ class Encoder(nn.Module):
     return x
 
 
-class Decoder(nn.Module):
+class TransformerDecoder(nn.Module):
   def __init__(self, hidden_channels, filter_channels, n_heads, n_layers, kernel_size=1, p_dropout=0., proximal_bias=False, proximal_init=True, **kwargs):
     super().__init__()
     self.hidden_channels = hidden_channels

@@ -12,6 +12,8 @@ from vits import commons
 from vits.mel_processing import spectrogram_torch
 from vits.utils import load_wav_to_torch, load_filepaths_and_text
 from vits.text import text_to_sequence, cleaned_text_to_sequence
+from vits.text.cleaners import japanese_cleaners
+from vits.text.japanese import ROMAJI_LIST
 
 
 model = VITS.load_from_checkpoint(PATH)
@@ -29,8 +31,31 @@ def get_text(text, hparams):
     text_norm = torch.LongTensor(text_norm)
     return text_norm
 
-source_text = "kokoa"
-text_norm = get_text(source_text, model.hparams)
+def split_romaji(text: str) -> str:
+    out = []
+    left_text = text
+    while len(left_text) > 0:
+        not_found = True
+        for c in ROMAJI_LIST:
+            if left_text.startswith(c):
+                out.append(c)
+                left_text = left_text[len(c):]
+                not_found = False
+                break
+        if not_found:
+            out.append(left_text[-1])
+            left_text = left_text[1:]
+    return " ".join(out)
+
+source_text = "ココアさんの妄想です。" # "おはようございます、夏さん."
+import pykakasi
+kks = pykakasi.kakasi()
+target_text = " ".join([item['hepburn'] for item in kks.convert(source_text)])
+target_text = split_romaji(target_text)
+target_text = japanese_cleaners(text=target_text)
+print(target_text)
+
+text_norm = get_text(target_text, model.hparams)
 
 text = text_norm.unsqueeze(0)
 text_lengths = torch.LongTensor(1)

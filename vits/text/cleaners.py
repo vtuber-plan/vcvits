@@ -19,6 +19,7 @@ from .symbols import symbols
 
 # Regular expression matching whitespace:
 _whitespace_re = re.compile(r'\s+')
+_dot_re = re.compile(r'\.+')
 
 # List of (regular expression, replacement) pairs for abbreviations:
 _abbreviations = [(re.compile('\\b%s\\.' % x[0], re.IGNORECASE), x[1]) for x in [
@@ -60,6 +61,8 @@ def lowercase(text):
 def collapse_whitespace(text):
   return re.sub(_whitespace_re, ' ', text)
 
+def collapse_dot(text):
+  return re.sub(_dot_re, ' ', text)
 
 def convert_to_ascii(text):
   return unidecode(text)
@@ -100,15 +103,16 @@ def english_cleaners2(text):
   return phonemes
 
 def japanese_cleaners(text):
-  '''Pipeline for Japanese text, including abbreviation expansion. + punctuation + stress'''
-  text = convert_to_ascii(text)
-  text = lowercase(text)
-  phonemes = collapse_whitespace(text)
-
-  out = ""
-  for c in phonemes:
-    if c in symbols:
-      out += c
-    else:
-      pass
-  return out
+    '''Pipeline for Japanese text, including abbreviation expansion. + punctuation + stress'''
+    text = convert_to_ascii(text)
+    text = lowercase(text)
+    text = collapse_dot(text)
+    
+    out = ""
+    for c in text:
+        if c in symbols:
+            out += c
+        else:
+            pass
+    phonemes = collapse_whitespace(out)
+    return phonemes
