@@ -30,14 +30,14 @@ class TextEncoder(nn.Module):
     self.emb = nn.Embedding(n_vocab, hidden_channels)
     nn.init.normal_(self.emb.weight, 0.0, hidden_channels**-0.5)
 
-    self.encoder = transformer.Encoder(
+    self.encoder = transformer.TransformerEncoder(
       hidden_channels,
       filter_channels,
       n_heads,
       n_layers,
       kernel_size,
       p_dropout)
-    self.proj= nn.Conv1d(hidden_channels, out_channels * 2, 1)
+    self.proj = nn.Conv1d(hidden_channels, out_channels * 2, 1)
 
   def forward(self, x, x_lengths):
     x = self.emb(x) * math.sqrt(self.hidden_channels) # [b, t, h]

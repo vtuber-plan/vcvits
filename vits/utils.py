@@ -8,6 +8,7 @@ import subprocess
 import numpy as np
 from scipy.io.wavfile import read
 import torch
+from .hparams import HParams
 
 MATPLOTLIB_FLAG = False
 
