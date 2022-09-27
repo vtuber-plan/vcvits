@@ -28,7 +28,7 @@
     "n_mel_channels": 80,
     "mel_fmin": 0.0,
     "mel_fmax": null,
-    "add_blank": true,
+    "add_blank": false,
     "n_speakers": 0,
     "cleaned_text": true
   },
@@ -36,7 +36,7 @@
     "inter_channels": 192,
     "hidden_channels": 192,
     "filter_channels": 768,
-    "n_heads": 12,
+    "n_heads": 2,
     "n_layers": 6,
     "kernel_size": 3,
     "p_dropout": 0.1,

@@ -47,7 +47,7 @@ def split_romaji(text: str) -> str:
             left_text = left_text[1:]
     return " ".join(out)
 
-source_text = "ココアさんの妄想です。" # "おはようございます、夏さん."
+source_text =  "おはようございます、皆さん." # "ココアさんの妄想です。"
 import pykakasi
 kks = pykakasi.kakasi()
 target_text = " ".join([item['hepburn'] for item in kks.convert(source_text)])
