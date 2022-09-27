@@ -46,7 +46,7 @@ def main():
     
     trainer = pl.Trainer(
         accelerator="gpu",
-        devices=[3],
+        devices=[0],
         # strategy="ddp",
         # amp_backend="native",
         # precision=16,

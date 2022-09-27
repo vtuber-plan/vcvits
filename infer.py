@@ -13,7 +13,7 @@ from vits.mel_processing import spectrogram_torch
 from vits.utils import load_wav_to_torch, load_filepaths_and_text
 from vits.text import text_to_sequence, cleaned_text_to_sequence
 from vits.text.cleaners import japanese_cleaners
-from vits.text.japanese import ROMAJI_LIST
+from vits.text.cleaners.japanese_mapping import ROMAJI_LIST
 
 
 model = VITS.load_from_checkpoint(PATH)
