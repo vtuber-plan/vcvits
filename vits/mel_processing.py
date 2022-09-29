@@ -48,7 +48,7 @@ mel_basis = {}
 hann_window = {}
 
 
-def spectrogram_torch(y, n_fft, sampling_rate, hop_size, win_size, center=False):
+def spectrogram_torch(y, n_fft: int, sampling_rate: int, hop_size: int, win_size: int, center: bool=False):
     if torch.min(y) < -1.:
         print('min value is ', torch.min(y))
     if torch.max(y) > 1.:

@@ -46,12 +46,13 @@ def main():
     
     trainer = pl.Trainer(
         accelerator="gpu",
-        devices=[0],
+        devices=[3],
         # strategy="ddp",
         # amp_backend="native",
         # precision=16,
         # logger=logger,
         # max_steps=100,
+        accumulate_grad_batches=8,
         max_epochs=hparams.train.epochs,
         default_root_dir="./logs",
         limit_val_batches=1

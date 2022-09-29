@@ -30,7 +30,9 @@ class VITS(pl.LightningModule):
         self.generator_out = None
 
     def training_step(self, batch, batch_idx, optimizer_idx):
-        x, x_lengths, spec, spec_lengths, y, y_lengths = batch
+        x, x_lengths = batch["text_ids"], batch["text_lengths"]
+        spec, spec_lengths = batch["spec_values"], batch["spec_lengths"]
+        y, y_lengths = batch["wav_values"], batch["wav_lengths"]
         
         # Generator
         if optimizer_idx == 0:
@@ -75,15 +77,12 @@ class VITS(pl.LightningModule):
 
             scalar_dict.update({"loss/g/{}".format(i): v for i, v in enumerate(losses_gen)})
 
-            '''
             image_dict = { 
                 "slice/mel_org": utils.plot_spectrogram_to_numpy(y_mel[0].data.cpu().numpy()),
                 "slice/mel_gen": utils.plot_spectrogram_to_numpy(y_hat_mel[0].data.cpu().numpy()), 
                 "all/mel": utils.plot_spectrogram_to_numpy(mel[0].data.cpu().numpy()),
                 "all/attn": utils.plot_alignment_to_numpy(attn[0,0].data.cpu().numpy())
             }
-            '''
-            image_dict = {}
             
             tensorboard = self.logger.experiment
             utils.summarize(
@@ -125,8 +124,10 @@ class VITS(pl.LightningModule):
     def validation_step(self, batch, batch_idx):
         self.net_g.eval()
         
-        x, x_lengths, spec, spec_lengths, y, y_lengths = batch
-
+        x, x_lengths = batch["text_ids"], batch["text_lengths"]
+        spec, spec_lengths = batch["spec_values"], batch["spec_lengths"]
+        y, y_lengths = batch["wav_values"], batch["wav_lengths"]
+        
         # remove else
         x = x[:1]
         x_lengths = x_lengths[:1]
