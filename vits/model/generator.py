@@ -1,5 +1,6 @@
 
 
+from typing import List, Union
 import torch
 from torch import nn
 from torch.nn import functional as F
@@ -12,18 +13,30 @@ from vits.commons import init_weights, get_padding
 
 
 class Generator(torch.nn.Module):
-    def __init__(self, initial_channel, resblock, resblock_kernel_sizes, resblock_dilation_sizes, upsample_rates, upsample_initial_channel, upsample_kernel_sizes, gin_channels=0):
+    def __init__(self, initial_channel: int,
+                    resblock: Union[str, modules.ResBlock2],
+                    resblock_kernel_sizes: List[int],
+                    resblock_dilation_sizes: List[int],
+                    upsample_rates: List[int],
+                    upsample_initial_channel: int,
+                    upsample_kernel_sizes: List[int],
+                    gin_channels: int=0):
         super(Generator, self).__init__()
         self.num_kernels = len(resblock_kernel_sizes)
         self.num_upsamples = len(upsample_rates)
-        self.conv_pre = Conv1d(initial_channel, upsample_initial_channel, 7, 1, padding=3)
+        self.conv_pre = Conv1d(in_channels=initial_channel, out_channels=upsample_initial_channel, kernel_size=7, stride=1, padding=3)
         resblock = modules.ResBlock1 if resblock == '1' else modules.ResBlock2
 
         self.ups = nn.ModuleList()
         for i, (u, k) in enumerate(zip(upsample_rates, upsample_kernel_sizes)):
             self.ups.append(weight_norm(
-                ConvTranspose1d(upsample_initial_channel//(2**i), upsample_initial_channel//(2**(i+1)),
-                                k, u, padding=(k-u)//2)))
+                ConvTranspose1d(in_channels=upsample_initial_channel//(2**i),
+                                out_channels=upsample_initial_channel//(2**(i+1)),
+                                kernel_size=k,
+                                stride=u,
+                                padding=(k-u)//2)
+                )
+            )
 
         self.resblocks = nn.ModuleList()
         for i in range(len(self.ups)):

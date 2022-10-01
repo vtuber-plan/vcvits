@@ -7,7 +7,7 @@ import torch.utils.data
 
 from .. import commons 
 from vits.mel_processing import spectrogram_torch
-from vits.utils import load_wav_to_torch, load_filepaths_and_text
+from vits.utils import load_filepaths, load_wav_to_torch, load_filepaths_and_text
 from ..text import text_to_sequence, cleaned_text_to_sequence
 
 
@@ -191,3 +191,62 @@ class TextAudioSpeakerLoader(torch.utils.data.Dataset):
     def __len__(self):
         return len(self.audiopaths_sid_text)
 
+class VoiceConversionLoader(torch.utils.data.Dataset):
+    def __init__(self, audiopaths: str, hparams):
+        self.audiopaths = load_filepaths(audiopaths)
+        self.text_cleaners  = hparams.text_cleaners
+        self.max_wav_value  = hparams.max_wav_value
+        self.sampling_rate  = hparams.sampling_rate
+        self.filter_length  = hparams.filter_length
+        self.hop_length     = hparams.hop_length
+        self.win_length     = hparams.win_length
+
+        self.cleaned_text = getattr(hparams, "cleaned_text", False)
+
+        self.add_blank = hparams.add_blank
+
+        random.seed(1234)
+        random.shuffle(self.audiopaths)
+
+    def get_audio_text_pair(self, audiopath_and_text):
+        # separate filename and text
+        audiopath, text = audiopath_and_text[0], audiopath_and_text[1]
+        text = self.get_text(text)
+        spec, wav = self.get_audio(audiopath)
+        return {
+            "text": text,
+            "spec": spec,
+            "wav": wav,
+        }
+
+    def get_audio(self, filename):
+        audio, sampling_rate = load_wav_to_torch(filename)
+        if sampling_rate != self.sampling_rate:
+            raise ValueError("{} {} SR doesn't match target {} SR".format(sampling_rate, self.sampling_rate))
+        audio_norm = audio / self.max_wav_value
+        audio_norm = audio_norm.unsqueeze(0)
+        spec_filename = filename.replace(".wav", ".spec.pt")
+        if os.path.exists(spec_filename):
+            spec = torch.load(spec_filename)
+        else:
+            spec = spectrogram_torch(audio_norm, self.filter_length, self.sampling_rate,
+                    self.hop_length, self.win_length, center=False)
+            spec = torch.squeeze(spec, 0)
+            torch.save(spec, spec_filename)
+        return spec, audio_norm
+
+    def get_text(self, text):
+        if self.cleaned_text:
+            text_norm = cleaned_text_to_sequence(text)
+        else:
+            text_norm = text_to_sequence(text, self.text_cleaners)
+        if self.add_blank:
+            text_norm = commons.intersperse(text_norm, 0)
+        text_norm = torch.LongTensor(text_norm)
+        return text_norm
+
+    def __getitem__(self, index):
+        return self.get_audio_text_pair(self.audiopaths_and_text[index])
+
+    def __len__(self):
+        return len(self.audiopaths_and_text)

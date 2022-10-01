@@ -23,7 +23,6 @@ from vits.data.dataset import TextAudioLoader, TextAudioSpeakerLoader
 def get_hparams() -> HParams:
     parser = argparse.ArgumentParser()
     parser.add_argument('-c', '--config', type=str, default="./configs/paimoon_base.json", help='JSON file for configuration')
-    # parser.add_argument('-m', '--model', type=str, required=True, help='Model name')
     args = parser.parse_args()
 
     with open(args.config, "r") as f:
@@ -35,6 +34,8 @@ def get_hparams() -> HParams:
 
 def main():
     hparams = get_hparams()
+    pl.utilities.seed.seed_everything(hparams.train.seed)
+
     train_dataset = TextAudioLoader(hparams.data.training_files, hparams.data)
     valid_dataset = TextAudioLoader(hparams.data.validation_files, hparams.data)
 
@@ -43,21 +44,20 @@ def main():
     valid_loader = DataLoader(valid_dataset, batch_size=1, num_workers=16, shuffle=False, pin_memory=True, collate_fn=collate_fn)
 
     model = VITS(**hparams)
-    
-    trainer = pl.Trainer(
-        accelerator="gpu",
-        devices=[3],
-        # strategy="ddp",
-        # amp_backend="native",
-        # precision=16,
-        # logger=logger,
-        # max_steps=100,
-        accumulate_grad_batches=8,
-        max_epochs=hparams.train.epochs,
-        default_root_dir="./logs",
-        limit_val_batches=1
-    )
 
+    trainer_params = {
+        "accelerator": "gpu",
+        "devices": [2],
+        # "strategy": "ddp",
+    }
+
+    trainer_params.update(hparams.trainer)
+
+    if hparams.train.fp16_run:
+        trainer_params["amp_backend"] = "native"
+        trainer_params["precision"] = 16
+    
+    trainer = pl.Trainer(**trainer_params)
     trainer.fit(model=model, train_dataloaders=train_loader, val_dataloaders=valid_loader)
 
 if __name__ == "__main__":

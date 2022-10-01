@@ -1,4 +1,5 @@
 
+from typing import Dict
 import torch
 from torch import nn
 from torch.nn import functional as F
@@ -29,7 +30,7 @@ class VITS(pl.LightningModule):
 
         self.generator_out = None
 
-    def training_step(self, batch, batch_idx, optimizer_idx):
+    def training_step(self, batch: Dict[str, torch.Tensor], batch_idx: int, optimizer_idx: int):
         x, x_lengths = batch["text_ids"], batch["text_lengths"]
         spec, spec_lengths = batch["spec_values"], batch["spec_lengths"]
         y, y_lengths = batch["wav_values"], batch["wav_lengths"]
@@ -157,10 +158,10 @@ class VITS(pl.LightningModule):
             self.hparams.data.mel_fmax
         )
         image_dict = {
-        "gen/mel": utils.plot_spectrogram_to_numpy(y_hat_mel[0].cpu().numpy())
+            "gen/mel": utils.plot_spectrogram_to_numpy(y_hat_mel[0].cpu().numpy())
         }
         audio_dict = {
-        "gen/audio": y_hat[0,:,:y_hat_lengths[0]]
+            "gen/audio": y_hat[0,:,:y_hat_lengths[0]]
         }
         # if self.global_step == 0:
         image_dict.update({"gt/mel": utils.plot_spectrogram_to_numpy(mel[0].cpu().numpy())})
@@ -177,7 +178,6 @@ class VITS(pl.LightningModule):
 
 
     def configure_optimizers(self):
-        
         self.optim_g = torch.optim.AdamW(
             self.net_g.parameters(), 
             self.hparams.train.learning_rate, 
