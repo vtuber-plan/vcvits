@@ -85,6 +85,10 @@ class TextAudioLoader(torch.utils.data.Dataset):
         self.min_text_len = getattr(hparams, "min_text_len", 1)
         self.max_text_len = getattr(hparams, "max_text_len", 190)
 
+        to_tensor = lambda x: torch.Tensor([x]) if type(x) is float else x
+        self.pitch_mean=to_tensor(214.72203)
+        self.pitch_std=to_tensor(65.72038)
+
         random.seed(1234)
         random.shuffle(self.audiopaths_and_text)
         self._filter()
@@ -139,15 +143,26 @@ class TextAudioLoader(torch.utils.data.Dataset):
             torch.save(spec, spec_filename)
         
         # load mel
-        melspec = spec_to_mel_torch(spec, self.hparams.filter_length, self.hparams.n_mel_channels, 
-                            self.hparams.sampling_rate, self.hparams.mel_fmin, self.hparams.mel_fmax)
-        melspec = torch.squeeze(melspec, 0)
+        mel_filename = filename.replace(".wav", ".mel.pt")
+        if os.path.exists(mel_filename):
+            melspec = torch.load(mel_filename)
+        else:
+            melspec = spec_to_mel_torch(spec, self.hparams.filter_length, self.hparams.n_mel_channels, 
+                                self.hparams.sampling_rate, self.hparams.mel_fmin, self.hparams.mel_fmax)
+            melspec = torch.squeeze(melspec, 0)
+            torch.save(melspec, mel_filename)
 
         # load pitch
-        pitch_mel = estimate_pitch(
-            audio=audio.numpy(), sr=sampling_rate, mel_len=melspec.shape[-1], n_fft=self.hparams.filter_length,
-            win_length=self.hparams.win_length, hop_length=self.hparams.hop_length, method='pyin',
-            normalize_mean=None, normalize_std=None, n_formants=1)
+        pitch_filename = filename.replace(".wav", ".pitch.pt")
+        if os.path.exists(pitch_filename):
+            pitch_mel = torch.load(pitch_filename)
+        else:
+            pitch_mel = estimate_pitch(
+                audio=audio.numpy(), sr=sampling_rate, mel_len=melspec.shape[-1], n_fft=self.hparams.filter_length,
+                win_length=self.hparams.win_length, hop_length=self.hparams.hop_length, method='pyin',
+                normalize_mean=self.pitch_mean, normalize_std=self.pitch_std, n_formants=1)
+            pitch_mel = torch.FloatTensor(pitch_mel)
+            torch.save(pitch_mel, pitch_filename)
 
         return spec, audio_norm, melspec, pitch_mel
 

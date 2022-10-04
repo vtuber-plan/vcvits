@@ -116,6 +116,7 @@ class SynthesizerTrn(nn.Module):
             self.emb_g = nn.Embedding(n_speakers, gin_channels)
 
     def forward(self, x, x_lengths, y, y_lengths, sid=None):
+        # text encoding
         x, m_p, logs_p, x_mask = self.enc_p(x, x_lengths)
         if self.n_speakers > 0:
             g = self.emb_g(sid).unsqueeze(-1)  # [b, h, 1]
@@ -150,12 +151,10 @@ class SynthesizerTrn(nn.Module):
             l_length = torch.sum((logw - logw_)**2, [1, 2]) / torch.sum(x_mask)  # for averaging
         
         # Predict pitch
-        pitch_pred = self.pitch_predictor(x, x_mask)
-        pitch_emb = self.pitch_emb(pitch_pred)
+        pitch_pred = self.pitch_predictor(z, y_mask)
 
         # Predict energy
-        energy_pred = self.energy_predictor(x, x_mask)
-        energy_emb = self.energy_emb(energy_pred)
+        energy_pred = self.energy_predictor(z, y_mask)
 
         # expand prior
         m_p = torch.matmul(attn.squeeze(1), m_p.transpose(1, 2)).transpose(1, 2)
@@ -163,7 +162,7 @@ class SynthesizerTrn(nn.Module):
 
         z_slice, ids_slice = commons.rand_slice_segments(z, y_lengths, self.segment_size)
         o = self.dec(z_slice, g=g)
-        return o, l_length, pitch_emb, energy_emb, attn, ids_slice, x_mask, y_mask, (z, z_p, m_p, logs_p, m_q, logs_q)
+        return o, l_length, pitch_pred, energy_pred, attn, ids_slice, x_mask, y_mask, (z, z_p, m_p, logs_p, m_q, logs_q)
 
     def infer(self, x, x_lengths, sid=None, noise_scale=1, length_scale=1, noise_scale_w=1., max_len=None):
         x, m_p, logs_p, x_mask = self.enc_p(x, x_lengths)
