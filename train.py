@@ -40,8 +40,8 @@ def main():
     valid_dataset = TextAudioLoader(hparams.data.validation_files, hparams.data)
 
     collate_fn = TextAudioCollate()
-    train_loader = DataLoader(train_dataset, batch_size=hparams.train.batch_size, num_workers=1, shuffle=False, pin_memory=True, collate_fn=collate_fn)
-    valid_loader = DataLoader(valid_dataset, batch_size=1, num_workers=1, shuffle=False, pin_memory=True, collate_fn=collate_fn)
+    train_loader = DataLoader(train_dataset, batch_size=hparams.train.batch_size, num_workers=16, shuffle=False, pin_memory=True, collate_fn=collate_fn)
+    valid_loader = DataLoader(valid_dataset, batch_size=1, num_workers=16, shuffle=False, pin_memory=True, collate_fn=collate_fn)
 
     model = VITS(**hparams)
 

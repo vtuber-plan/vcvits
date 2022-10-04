@@ -22,6 +22,47 @@ def normalize_pitch(pitch, mean, std):
     pitch[zeros] = 0.0
     return pitch
 
+def estimate_pitch(audio: np.ndarray, sr: int, mel_len: int, n_fft: int, win_length: int, hop_length: int,
+                    method='pyin', normalize_mean=None, normalize_std=None, n_formants=1):
+    if type(normalize_mean) is float or type(normalize_mean) is list:
+        normalize_mean = torch.tensor(normalize_mean)
+
+    if type(normalize_std) is float or type(normalize_std) is list:
+        normalize_std = torch.tensor(normalize_std)
+
+    if method == 'pyin':
+        snd, sr = audio, sr
+        pad_size = int((n_fft-hop_length)/2)
+        snd = np.pad(snd, (pad_size, pad_size), mode='reflect')
+
+        pitch_mel, voiced_flag, voiced_probs = librosa.pyin(
+            snd,
+            fmin=librosa.note_to_hz('C2'),
+            fmax=librosa.note_to_hz('C7'),
+            sr=sr,
+            frame_length=win_length,
+            hop_length=hop_length,
+            center=False,
+            pad_mode='reflect')
+        assert np.abs(mel_len - pitch_mel.shape[0]) <= 1.0
+
+        pitch_mel = np.where(np.isnan(pitch_mel), 0.0, pitch_mel)
+        pitch_mel = torch.from_numpy(pitch_mel).unsqueeze(0)
+        pitch_mel = F.pad(pitch_mel, (0, mel_len - pitch_mel.size(1)))
+
+        if n_formants > 1:
+            raise NotImplementedError
+    else:
+        raise ValueError
+
+    pitch_mel = pitch_mel.float()
+
+    if normalize_mean is not None:
+        assert normalize_std is not None
+        pitch_mel = normalize_pitch(pitch_mel, normalize_mean, normalize_std)
+
+    return pitch_mel
+
 class TextAudioLoader(torch.utils.data.Dataset):
     """
         1) loads audio, text pairs
@@ -64,46 +105,6 @@ class TextAudioLoader(torch.utils.data.Dataset):
                 lengths.append(os.path.getsize(audiopath) // (2 * self.hop_length))
         self.audiopaths_and_text = audiopaths_and_text_new
         self.lengths = lengths
-    
-    def estimate_pitch(self, wav: str, mel_len: int, method='pyin', normalize_mean=None, normalize_std=None, n_formants=1):
-        if type(normalize_mean) is float or type(normalize_mean) is list:
-            normalize_mean = torch.tensor(normalize_mean)
-
-        if type(normalize_std) is float or type(normalize_std) is list:
-            normalize_std = torch.tensor(normalize_std)
-
-        if method == 'pyin':
-            snd, sr = librosa.load(wav, sr=None)
-            pad_size = int((self.hparams.filter_length-self.hparams.hop_length)/2)
-            snd = np.pad(snd, (pad_size, pad_size), mode='reflect')
-  
-            pitch_mel, voiced_flag, voiced_probs = librosa.pyin(
-                snd,
-                fmin=librosa.note_to_hz('C2'),
-                fmax=librosa.note_to_hz('C7'),
-                sr=sr,
-                frame_length=self.hparams.win_length,
-                hop_length=self.hparams.hop_length,
-                center=False,
-                pad_mode='reflect')
-            assert np.abs(mel_len - pitch_mel.shape[0]) <= 1.0
-
-            pitch_mel = np.where(np.isnan(pitch_mel), 0.0, pitch_mel)
-            pitch_mel = torch.from_numpy(pitch_mel).unsqueeze(0)
-            pitch_mel = F.pad(pitch_mel, (0, mel_len - pitch_mel.size(1)))
-
-            if n_formants > 1:
-                raise NotImplementedError
-        else:
-            raise ValueError
-
-        pitch_mel = pitch_mel.float()
-
-        if normalize_mean is not None:
-            assert normalize_std is not None
-            pitch_mel = normalize_pitch(pitch_mel, normalize_mean, normalize_std)
-
-        return pitch_mel
 
     def get_audio_text_pair(self, audiopath_and_text):
         # separate filename and text
@@ -143,7 +144,10 @@ class TextAudioLoader(torch.utils.data.Dataset):
         melspec = torch.squeeze(melspec, 0)
 
         # load pitch
-        pitch_mel = self.estimate_pitch(filename, melspec.shape[-1], "pyin", None, None)
+        pitch_mel = estimate_pitch(
+            audio=audio.numpy(), sr=sampling_rate, mel_len=melspec.shape[-1], n_fft=self.hparams.filter_length,
+            win_length=self.hparams.win_length, hop_length=self.hparams.hop_length, method='pyin',
+            normalize_mean=None, normalize_std=None, n_formants=1)
 
         return spec, audio_norm, melspec, pitch_mel
 
@@ -156,25 +160,6 @@ class TextAudioLoader(torch.utils.data.Dataset):
             text_norm = commons.intersperse(text_norm, 0)
         text_norm = torch.LongTensor(text_norm)
         return text_norm
-    
-    def get_mel(self, filename: str):
-        audio, sampling_rate = load_wav_to_torch(filename)
-        if sampling_rate != self.stft.sampling_rate:
-            raise ValueError("{} SR doesn't match target {} SR".format(
-                sampling_rate, self.stft.sampling_rate))
-        audio_norm = audio / self.max_wav_value
-        audio_norm = audio_norm.unsqueeze(0)
-        audio_norm = torch.autograd.Variable(audio_norm, requires_grad=False)
-        melspec = mel_spectrogram_torch(audio_norm,
-                                        self.hparams.data.filter_length, 
-                                        self.hparams.data.n_mel_channels, 
-                                        self.hparams.data.sampling_rate, 
-                                        self.hparams.data.hop_length, 
-                                        self.hparams.data.win_length, 
-                                        self.hparams.data.mel_fmin, 
-                                        self.hparams.data.mel_fmax)
-        
-        return melspec
 
     def __getitem__(self, index):
         return self.get_audio_text_pair(self.audiopaths_and_text[index])

@@ -25,6 +25,6 @@ class EnergyPredictor(nn.Module):
 
     def forward(self, enc_out, enc_out_mask):
         out = enc_out * enc_out_mask
-        out = self.layers(out.transpose(1, 2)).transpose(1, 2)
-        out = self.fc(out) * enc_out_mask
+        out = self.layers(out)
+        out = self.fc(out.transpose(1, 2)).transpose(1, 2) * enc_out_mask
         return out

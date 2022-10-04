@@ -150,11 +150,11 @@ class SynthesizerTrn(nn.Module):
             l_length = torch.sum((logw - logw_)**2, [1, 2]) / torch.sum(x_mask)  # for averaging
         
         # Predict pitch
-        pitch_pred = self.pitch_predictor(x, x_mask).permute(0, 2, 1)
+        pitch_pred = self.pitch_predictor(x, x_mask)
         pitch_emb = self.pitch_emb(pitch_pred)
 
         # Predict energy
-        energy_pred = self.energy_predictor(x, x_mask).squeeze(-1)
+        energy_pred = self.energy_predictor(x, x_mask)
         energy_emb = self.energy_emb(energy_pred)
 
         # expand prior
