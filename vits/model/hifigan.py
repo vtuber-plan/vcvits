@@ -10,6 +10,7 @@ from torch import optim
 import pytorch_lightning as pl
 
 from vits.model.multi_scale_discriminator import MultiScaleDiscriminator
+from vits.model.vocoder import Generator
 
 from .synthesizer_trn import SynthesizerTrn
 from .multi_period_discriminator import MultiPeriodDiscriminator
@@ -19,16 +20,12 @@ from .losses import discriminator_loss, kl_loss,feature_loss, generator_loss
 from .. import commons
 from .. import utils
 
-class VITS(pl.LightningModule):
+class HiFiGAN(pl.LightningModule):
     def __init__(self, **kwargs):
         super().__init__()
         self.save_hyperparameters(*[k for k in kwargs])
 
-        self.net_g = SynthesizerTrn(
-            len(symbols),
-            self.hparams.data.filter_length // 2 + 1,
-            self.hparams.train.segment_size // self.hparams.data.hop_length,
-            **self.hparams.model)
+        self.net_g = Generator()
         self.net_period_d = MultiPeriodDiscriminator(self.hparams.model.use_spectral_norm)
         self.net_scale_d = MultiScaleDiscriminator(self.hparams.model.use_spectral_norm)
 
@@ -42,7 +39,7 @@ class VITS(pl.LightningModule):
         # Generator
         if optimizer_idx == 0:
             self.generator_out = self.net_g(x, x_lengths, spec, spec_lengths)
-            y_hat, l_length, pitch_emb, energy_emb, attn, ids_slice, x_mask, z_mask, (z, z_p, m_p, logs_p, m_q, logs_q) = self.generator_out
+            y_hat, l_length, attn, ids_slice, x_mask, z_mask, (z, z_p, m_p, logs_p, m_q, logs_q) = self.generator_out
             y = commons.slice_segments(y, ids_slice * self.hparams.data.hop_length, self.hparams.train.segment_size) # slice
 
             mel = spec_to_mel_torch(
@@ -114,7 +111,7 @@ class VITS(pl.LightningModule):
     
         # Discriminator
         if optimizer_idx == 1:
-            y_hat, l_length, pitch_emb, energy_emb, attn, ids_slice, x_mask, z_mask, (z, z_p, m_p, logs_p, m_q, logs_q) = self.generator_out
+            y_hat, l_length, attn, ids_slice, x_mask, z_mask, (z, z_p, m_p, logs_p, m_q, logs_q) = self.generator_out
             y = commons.slice_segments(y, ids_slice * self.hparams.data.hop_length, self.hparams.train.segment_size) # slice 
             
             # MPD

@@ -16,8 +16,10 @@ from vits.commons import init_weights, get_padding
 from .text_encoder import TextEncoder
 from .posterior_encoder import PosteriorEncoder
 from .flow import ResidualCouplingBlock
-from .preditor import StochasticDurationPredictor, DurationPredictor
-from .generator import Generator
+from .predictors.duration_predictor import StochasticDurationPredictor, DurationPredictor
+from .predictors.pitch_predictor import PitchPredictor
+from .predictors.energy_predictor import EnergyPredictor
+from .vocoder import Generator
 
 
 class SynthesizerTrn(nn.Module):
@@ -93,6 +95,23 @@ class SynthesizerTrn(nn.Module):
         else:
             self.dp = DurationPredictor(hidden_channels, 256, 3, 0.5, gin_channels=gin_channels)
 
+        symbols_embedding_dim = 16
+
+        pitch_conditioning_formants = 1
+        pitch_embedding_kernel_size = 3
+        self.pitch_predictor = PitchPredictor(hidden_channels, 128, 3, 0.5)
+        self.pitch_emb = nn.Conv1d(
+            pitch_conditioning_formants, symbols_embedding_dim,
+            kernel_size=pitch_embedding_kernel_size,
+            padding=int((pitch_embedding_kernel_size - 1) / 2))
+
+        energy_embedding_kernel_size = 3
+        self.energy_predictor = EnergyPredictor(hidden_channels, 128, 3, 0.5)
+        self.energy_emb = nn.Conv1d(
+            1, symbols_embedding_dim,
+            kernel_size=energy_embedding_kernel_size,
+            padding=int((energy_embedding_kernel_size - 1) / 2))
+
         if n_speakers > 1:
             self.emb_g = nn.Embedding(n_speakers, gin_channels)
 
@@ -129,6 +148,14 @@ class SynthesizerTrn(nn.Module):
             logw_ = torch.log(w + 1e-6) * x_mask
             logw = self.dp(x, x_mask, g=g)
             l_length = torch.sum((logw - logw_)**2, [1, 2]) / torch.sum(x_mask)  # for averaging
+        
+        # Predict pitch
+        pitch_pred = self.pitch_predictor(x, x_mask).permute(0, 2, 1)
+        pitch_emb = self.pitch_emb(pitch_pred)
+
+        # Predict energy
+        energy_pred = self.energy_predictor(x, x_mask).squeeze(-1)
+        energy_emb = self.energy_emb(energy_pred)
 
         # expand prior
         m_p = torch.matmul(attn.squeeze(1), m_p.transpose(1, 2)).transpose(1, 2)
@@ -136,7 +163,7 @@ class SynthesizerTrn(nn.Module):
 
         z_slice, ids_slice = commons.rand_slice_segments(z, y_lengths, self.segment_size)
         o = self.dec(z_slice, g=g)
-        return o, l_length, attn, ids_slice, x_mask, y_mask, (z, z_p, m_p, logs_p, m_q, logs_q)
+        return o, l_length, pitch_emb, energy_emb, attn, ids_slice, x_mask, y_mask, (z, z_p, m_p, logs_p, m_q, logs_q)
 
     def infer(self, x, x_lengths, sid=None, noise_scale=1, length_scale=1, noise_scale_w=1., max_len=None):
         x, m_p, logs_p, x_mask = self.enc_p(x, x_lengths)
@@ -146,8 +173,7 @@ class SynthesizerTrn(nn.Module):
             g = None
 
         if self.use_sdp:
-            logw = self.dp(x, x_mask, g=g, reverse=True,
-                           noise_scale=noise_scale_w)
+            logw = self.dp(x, x_mask, g=g, reverse=True, noise_scale=noise_scale_w)
         else:
             logw = self.dp(x, x_mask, g=g)
         w = torch.exp(logw) * x_mask * length_scale
