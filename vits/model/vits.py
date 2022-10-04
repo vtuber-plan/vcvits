@@ -99,7 +99,9 @@ class VITS(pl.LightningModule):
                 "loss/g/s_fm": loss_s_fm,
                 "loss/g/mel": loss_mel,
                 "loss/g/dur": loss_dur,
-                "loss/g/kl": loss_kl
+                "loss/g/kl": loss_kl,
+                "loss/g/pitch": loss_pitch,
+                "loss/g/energy": loss_energy,
             })
 
             scalar_dict.update({"loss/g/p_gen_{}".format(i): v for i, v in enumerate(losses_p_gen)})

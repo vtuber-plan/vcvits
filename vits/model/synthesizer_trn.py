@@ -99,14 +99,14 @@ class SynthesizerTrn(nn.Module):
 
         pitch_conditioning_formants = 1
         pitch_embedding_kernel_size = 3
-        self.pitch_predictor = PitchPredictor(hidden_channels, 128, 3, 0.5)
+        self.pitch_predictor = PitchPredictor(hidden_channels, 256, 3, 0.5)
         self.pitch_emb = nn.Conv1d(
             pitch_conditioning_formants, symbols_embedding_dim,
             kernel_size=pitch_embedding_kernel_size,
             padding=int((pitch_embedding_kernel_size - 1) / 2))
 
         energy_embedding_kernel_size = 3
-        self.energy_predictor = EnergyPredictor(hidden_channels, 128, 3, 0.5)
+        self.energy_predictor = EnergyPredictor(hidden_channels, 256, 3, 0.5)
         self.energy_emb = nn.Conv1d(
             1, symbols_embedding_dim,
             kernel_size=energy_embedding_kernel_size,
@@ -150,11 +150,11 @@ class SynthesizerTrn(nn.Module):
             logw = self.dp(x, x_mask, g=g)
             l_length = torch.sum((logw - logw_)**2, [1, 2]) / torch.sum(x_mask)  # for averaging
         
+        # glow-wavegan
         # Predict pitch
-        pitch_pred = self.pitch_predictor(z, y_mask)
-
+        pitch_pred = self.pitch_predictor(z_p, y_mask)
         # Predict energy
-        energy_pred = self.energy_predictor(z, y_mask)
+        energy_pred = self.energy_predictor(z_p, y_mask)
 
         # expand prior
         m_p = torch.matmul(attn.squeeze(1), m_p.transpose(1, 2)).transpose(1, 2)
