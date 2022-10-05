@@ -12,6 +12,9 @@ def replace_chinese_mark(text: str) -> str:
     text = text.replace("」", "\"")
     text = text.replace("（", "(")
     text = text.replace("）", ")")
+    text = text.replace("《", "")
+    text = text.replace("》", "")
+    text = text.replace("：", ":")
     return text
 
 def chinese_cleaners(text: str):
