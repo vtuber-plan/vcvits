@@ -5,6 +5,7 @@ from pypinyin import pinyin, lazy_pinyin, Style
 def replace_chinese_mark(text: str) -> str:
     text = text.replace("，", ",")
     text = text.replace("。", ".")
+    text = text.replace("·", " ")
     text = text.replace("？", "?")
     text = text.replace("！", "!")
     text = text.replace("、", ",")
@@ -15,6 +16,8 @@ def replace_chinese_mark(text: str) -> str:
     text = text.replace("《", "")
     text = text.replace("》", "")
     text = text.replace("：", ":")
+    text = text.replace("+", "")
+    text = text.replace("$", "")
     return text
 
 def chinese_cleaners(text: str):

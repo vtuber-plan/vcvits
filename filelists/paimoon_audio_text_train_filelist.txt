@@ -213,7 +213,7 @@ dataset/paimoon/3012_490.wav|他们就在码头那边，他们说，让我完成
 dataset/paimoon/4006_639.wav|呜哇…一张纸片，居然能感受到这么多内容，岂不是显得我很失败？我只能想到许多人围在一起烤鱼什么的…
 dataset/paimoon/1012_222.wav|好像…基本上是空空如也的。似乎丘丘人的生命到了最后是不需要吃东西的吗？
 dataset/paimoon/1015_197.wav|所以说须弥人其实是会做梦的，而且现在我们大家都在梦里…
-dataset/paimoon/4001_545.wav|索引上说，莱纳德的冒险家手册在图书馆一楼</color>的<color=#00E1FFFF>西北角。
+dataset/paimoon/4001_545.wav|索引上说，莱纳德的冒险家手册在图书馆一楼的西北角。
 dataset/paimoon/2018_265.wav|葬仪，葬仪…哦！钟离当客卿的那个「往生堂」，不就是专门做这种工作的吗？
 dataset/paimoon/1015_1113.wav|迪娜泽黛你、你居然还都吃过！唔…那就让旅行者帮忙选吧，我要日落果味的！
 dataset/paimoon/2013_75.wav|说起来，他们为什么一直强调，「不能死在没风的地方」呢？
@@ -679,7 +679,7 @@ dataset/paimoon/4001_404.wav|这种尺寸的陨石恐怕更厉害…到附近看
 dataset/paimoon/2019_61.wav|琴团长委托我们去办事，结果…好像有点搞砸了。
 dataset/paimoon/1015_1683.wav|明明是可能会危及生命的情况，可人们自己却都完全意识不到…必须要阻止才行。
 dataset/paimoon/4001_105.wav|怎么办，我还是不明白他说的意思呀？
-dataset/paimoon/1013_282.wav|也就是说，黄昏</color>时到天衡山南部的<color=#00E1FFFF>湖中心，就能找到秘华石了吧。
+dataset/paimoon/1013_282.wav|也就是说，黄昏时到天衡山南部的湖中心，就能找到秘华石了吧。
 dataset/paimoon/1015_1294.wav|…信息量好大，听起来出了须弥城就到了这个「空间」之外了吗？
 dataset/paimoon/2024_78.wav|如果现在鬼族又跑来做坏事，那不就是让所有的牺牲都失去了意义吗！
 dataset/paimoon/2022_510.wav|不过，心海确实很疲惫的样子。既然还有时间，我们再陪她一起休息一下吧。
@@ -1040,7 +1040,7 @@ dataset/paimoon/2023_269.wav|「且看主角如何立下赫赫军功，与反抗
 dataset/paimoon/1015_920.wav|艾尔海森给的纸上写了，多莉的线人就在旧市街那边，是一个商贩。
 dataset/paimoon/1011_35.wav|糟糕，附近所有的守卫好像都朝我们冲过来了，，快跑啊——
 dataset/paimoon/External18_370.wav|雷泽毛茸茸的，肯定能做出上好的狼毫笔！然后我们就能大赚一笔！
-dataset/paimoon/4001_470.wav|感觉…也许可以？要不我们就先试试，能不能利用神之眼</color>来搜索<color=#00E1FFFF>陨石碎片、清理危害吧？
+dataset/paimoon/4001_470.wav|感觉…也许可以？要不我们就先试试，能不能利用神之眼来搜索陨石碎片、清理危害吧？
 dataset/paimoon/1015_72.wav|你是想探查一下周围还有没有同伙，在这期间请旅行者带迪娜泽黛去休息对吧？
 dataset/paimoon/4011_1659.wav|天领奉行说你们霸占了这块公用的合影板，搞得其他人都没法用了。
 dataset/paimoon/2027_599.wav|听过我名号的话，最好别打「肉」的主意。
@@ -1552,7 +1552,7 @@ dataset/paimoon/4008_627.wav|厨师不吃自己做的菜…唔，确实很不合
 dataset/paimoon/4017_212.wav|快要到阿折罗造像二十周年店庆了，也不知道小朋友们到底喜不喜欢我们辛苦准备的木刻，一起去看看吧？
 dataset/paimoon/1009_975.wav|欸，要去直面稻妻的官方人员吗？不是说偷偷地…
 dataset/paimoon/1010_293.wav|我还记得，绫华说过…是那个…珊瑚宫组织的！反抗眼狩令的组织！
-dataset/paimoon/1005_149.wav|哦！我想起来了，在蒙德的时候见过…达达乌帕谷里</color>，「好肉族」的丘丘人有一口<color=#00E1FFFF>超大的锅！很结实，应该能顶住元素反应！
+dataset/paimoon/1005_149.wav|哦！我想起来了，在蒙德的时候见过…达达乌帕谷里，「好肉族」的丘丘人有一口超大的锅！很结实，应该能顶住元素反应！
 dataset/paimoon/1015_179.wav|须弥人只是以为自己不会做梦，而真相是虚空在他们不知情的情况下偷走了那些梦？
 dataset/paimoon/External24_114.wav|如果班尼特不小心害死了你，我和他的良心都会很不安的！
 dataset/paimoon/1015_2143.wav|嘻嘻，没关系啦，知道你是安柏的朋友后，感觉一下子和你亲近了不少呢。
@@ -2133,7 +2133,7 @@ dataset/paimoon/2019_207.wav|蒙德城西风骑士团荣誉骑士，！和他最
 dataset/paimoon/3006_519.wav|等等，这酒壶里的东西，难道真是那种草药汤吗？
 dataset/paimoon/4012_265.wav|我对吃很执着很精通，错过我是他们的损失！呜…
 dataset/paimoon/4006_206.wav|我们不是穿过那道门了吗？难道那不是进入下一间房间的门吗？
-dataset/paimoon/4001_63.wav|我去看看有什么…咦？皇女，你的神之眼</color>在<color=#00E1FFFF>闪哦！
+dataset/paimoon/4001_63.wav|我去看看有什么…咦？皇女，你的神之眼在闪哦！
 dataset/paimoon/1005_705.wav|道上人士…阴影…送人「往生」…哇！难道说，「往生堂」这个组织，是…
 dataset/paimoon/1007_141.wav|然后，深渊教团的怪物，就是坎瑞亚灭国时的人民…扭曲成的怪物。这真是可怕的故事。
 dataset/paimoon/1002_163.wav|不过，这样说来…现在去黑市的话，是不是还有可能买到那件唯一的真品？
@@ -2368,7 +2368,7 @@ dataset/paimoon/4003_466.wav|璃月港里有那么多好吃的，「松茸酿肉
 dataset/paimoon/2006_331.wav|好吧，帮人帮到底也是派蒙我的作风哦…嗯，虽然好像不是那么顺路的感觉。
 dataset/paimoon/5001_84.wav|不不…你说得对。既然是厉害的怪物，那就算见到了，最好也绕着走…
 dataset/paimoon/1008_186.wav|欸？微乎其微？那你是用什么办法离开稻妻的呢？
-dataset/paimoon/External0_374.wav|我们的目标只有泪滴结晶，是正面迎敌</color>还是<color=#00E1FFFF>悄悄摸进去，就看你的决定啦！
+dataset/paimoon/External0_374.wav|我们的目标只有泪滴结晶，是正面迎敌还是悄悄摸进去，就看你的决定啦！
 dataset/paimoon/1008_443.wav|他之前就一直说，自己想要寻求突破，想要去世界各地旅行…没想到他还真这么做了。
 dataset/paimoon/4011_556.wav|唔，丘丘人又围上来了，真是难缠…
 dataset/paimoon/1007_482.wav|另外，为什么…我一直在陪你寻找的哥哥，现在却和深渊教团的怪物站在一起？

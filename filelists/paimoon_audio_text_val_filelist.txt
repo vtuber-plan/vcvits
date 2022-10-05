@@ -110,7 +110,7 @@ dataset/paimoon/2008_302.wav|我们就按顺序来吧，先璃月港，再去层
 dataset/paimoon/1011_689.wav|那些守卫好像也很紧张的样子…我们去看看究竟发生了什么吧？
 dataset/paimoon/1015_343.wav|是因为我们是陌生人，有些事情不方便说吗？如果真是这样也没关系，你不用在意。
 dataset/paimoon/External0_323.wav|「大肉丸」…可是为什么，这里会有一把木剑呢？这把木剑和「大肉丸」你又有什么关系？
-dataset/paimoon/External22_198.wav|前面的敌人好多！正面冲进去</color>感觉很危险，或许可以从<color=#00E1FFFF>两边的小路溜进去。
+dataset/paimoon/External22_198.wav|前面的敌人好多！正面冲进去感觉很危险，或许可以从两边的小路溜进去。
 dataset/paimoon/2001_6.wav|「在那湖中之城里，住着三只六臂巨人。两位守护着神像，一位守护着众神的财宝」，这是什么意思？
 dataset/paimoon/1014_112.wav|对对，万一你打开门，里面就是我们要找的人该多好啊！比如说失踪的魈之类的。
 dataset/paimoon/2010_139.wav|嗯…既然是被史莱姆吞了，那可以用「元素诱饵」把附近的史莱姆全都引过来吧？
