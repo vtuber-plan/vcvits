@@ -152,9 +152,9 @@ class SynthesizerTrn(nn.Module):
         
         # glow-wavegan
         # Predict pitch
-        pitch_pred = self.pitch_predictor(z_p, y_mask)
+        pitch_pred = self.pitch_predictor(z, y_mask)
         # Predict energy
-        energy_pred = self.energy_predictor(z_p, y_mask)
+        energy_pred = self.energy_predictor(z, y_mask)
 
         # expand prior
         m_p = torch.matmul(attn.squeeze(1), m_p.transpose(1, 2)).transpose(1, 2)

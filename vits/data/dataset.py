@@ -160,7 +160,8 @@ class TextAudioLoader(torch.utils.data.Dataset):
             pitch_mel = estimate_pitch(
                 audio=audio.numpy(), sr=sampling_rate, mel_len=melspec.shape[-1], n_fft=self.hparams.filter_length,
                 win_length=self.hparams.win_length, hop_length=self.hparams.hop_length, method='pyin',
-                normalize_mean=self.pitch_mean, normalize_std=self.pitch_std, n_formants=1)
+                normalize_mean=None, normalize_std=None, n_formants=1)
+            pitch_mel = np.log2(pitch_mel + 1e-6)
             pitch_mel = torch.FloatTensor(pitch_mel)
             torch.save(pitch_mel, pitch_filename)
 
