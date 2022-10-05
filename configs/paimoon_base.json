@@ -20,7 +20,12 @@
     "init_lr_ratio": 1,
     "warmup_epochs": 0,
     "c_mel": 45,
-    "c_kl": 1.0
+    "c_kl": 1.0,
+    "c_dur": 1.0,
+    "c_pitch": 5.0,
+    "c_energy": 1.0,
+    "c_p_fm": 10,
+    "c_s_fm": 10
   },
   "data": {
     "training_files": "filelists/paimoon_audio_text_train_filelist.txt.cleaned",

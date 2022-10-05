@@ -69,24 +69,24 @@ class VITS(pl.LightningModule):
             )
 
             y_dp_hat_r, y_dp_hat_g, fmap_p_r, fmap_p_g = self.net_period_d(y, y_hat)
-            loss_p_fm = feature_loss(fmap_p_r, fmap_p_g)
+            loss_p_fm = feature_loss(fmap_p_r, fmap_p_g) * self.hparams.train.c_p_fm
             loss_p_gen, losses_p_gen = generator_loss(y_dp_hat_g)
 
             y_ds_hat_r, y_ds_hat_g, fmap_s_r, fmap_s_g = self.net_scale_d(y, y_hat)
-            loss_s_fm = feature_loss(fmap_s_r, fmap_s_g)
+            loss_s_fm = feature_loss(fmap_s_r, fmap_s_g) * self.hparams.train.c_s_fm
             loss_s_gen, losses_s_gen = generator_loss(y_ds_hat_g)
 
             # kl
             loss_kl = kl_loss(z_p, logs_q, m_p, logs_p, z_mask) * self.hparams.train.c_kl
             # dur
-            loss_dur = torch.sum(l_length.float())
+            loss_dur = torch.sum(l_length.float()) * self.hparams.train.c_dur
             # mel
             loss_mel = F.l1_loss(y_mel, y_hat_mel) * self.hparams.train.c_mel
 
             # pitch
-            loss_pitch = F.mse_loss(pitch_pred, pitch)
+            loss_pitch = F.mse_loss(pitch_pred, pitch) * self.hparams.train.c_pitch
             # energy
-            loss_energy = F.mse_loss(energy_pred, energy)
+            loss_energy = F.mse_loss(energy_pred, energy) * self.hparams.train.c_energy
 
             loss_gen_all = (loss_s_gen + loss_s_fm) + (loss_p_gen + loss_p_fm) + loss_kl + loss_mel + loss_dur + loss_pitch + loss_energy
 

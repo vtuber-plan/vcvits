@@ -95,9 +95,10 @@ class SynthesizerTrn(nn.Module):
             self.dp = StochasticDurationPredictor(hidden_channels, 192, 3, 0.5, 4, gin_channels=gin_channels)
         else:
             self.dp = DurationPredictor(hidden_channels, 256, 3, 0.5, gin_channels=gin_channels)
+    
+        self.pitch_predictor = PitchPredictor(hidden_channels, 256, 3, 0.1)
+        self.energy_predictor = EnergyPredictor(hidden_channels, 256, 3, 0.1)
 
-        self.pitch_predictor = PitchPredictor(hidden_channels, 256, 3, 0.5)
-        self.energy_predictor = EnergyPredictor(hidden_channels, 256, 3, 0.5)
         if n_speakers > 1:
             self.emb_g = nn.Embedding(n_speakers, gin_channels)
 
