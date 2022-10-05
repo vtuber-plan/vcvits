@@ -6,6 +6,7 @@ from torch.nn import functional as F
 
 import vits.commons as commons
 import vits.model.modules as modules
+from vits.model.predictors.modules import average_pitch
 from . import transformer
 import monotonic_align
 
@@ -95,23 +96,8 @@ class SynthesizerTrn(nn.Module):
         else:
             self.dp = DurationPredictor(hidden_channels, 256, 3, 0.5, gin_channels=gin_channels)
 
-        symbols_embedding_dim = 16
-
-        pitch_conditioning_formants = 1
-        pitch_embedding_kernel_size = 3
         self.pitch_predictor = PitchPredictor(hidden_channels, 256, 3, 0.5)
-        self.pitch_emb = nn.Conv1d(
-            pitch_conditioning_formants, symbols_embedding_dim,
-            kernel_size=pitch_embedding_kernel_size,
-            padding=int((pitch_embedding_kernel_size - 1) / 2))
-
-        energy_embedding_kernel_size = 3
         self.energy_predictor = EnergyPredictor(hidden_channels, 256, 3, 0.5)
-        self.energy_emb = nn.Conv1d(
-            1, symbols_embedding_dim,
-            kernel_size=energy_embedding_kernel_size,
-            padding=int((energy_embedding_kernel_size - 1) / 2))
-
         if n_speakers > 1:
             self.emb_g = nn.Embedding(n_speakers, gin_channels)
 
@@ -150,7 +136,6 @@ class SynthesizerTrn(nn.Module):
             logw = self.dp(x, x_mask, g=g)
             l_length = torch.sum((logw - logw_)**2, [1, 2]) / torch.sum(x_mask)  # for averaging
         
-        # glow-wavegan
         # Predict pitch
         pitch_pred = self.pitch_predictor(z, y_mask)
         # Predict energy

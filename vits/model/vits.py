@@ -9,10 +9,11 @@ from torch import optim
 
 import pytorch_lightning as pl
 
-from vits.model.multi_scale_discriminator import MultiScaleDiscriminator
+from .discriminators.multi_scale_discriminator import MultiScaleDiscriminator
+from .discriminators.multi_period_discriminator import MultiPeriodDiscriminator
 
 from .synthesizer_trn import SynthesizerTrn
-from .multi_period_discriminator import MultiPeriodDiscriminator
+
 from ..text.symbols import symbols
 from ..mel_processing import spec_to_mel_torch, mel_spectrogram_torch
 from .losses import discriminator_loss, kl_loss,feature_loss, generator_loss

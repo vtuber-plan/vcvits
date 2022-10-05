@@ -9,11 +9,12 @@ from torch import optim
 
 import pytorch_lightning as pl
 
-from vits.model.multi_scale_discriminator import MultiScaleDiscriminator
+from .discriminators.multi_scale_discriminator import MultiScaleDiscriminator
+from .discriminators.multi_period_discriminator import MultiPeriodDiscriminator
+
 from vits.model.vocoder import Generator
 
 from .synthesizer_trn import SynthesizerTrn
-from .multi_period_discriminator import MultiPeriodDiscriminator
 from ..text.symbols import symbols
 from ..mel_processing import spec_to_mel_torch, mel_spectrogram_torch
 from .losses import discriminator_loss, kl_loss,feature_loss, generator_loss
@@ -38,8 +39,8 @@ class HiFiGAN(pl.LightningModule):
         
         # Generator
         if optimizer_idx == 0:
-            self.generator_out = self.net_g(x, x_lengths, spec, spec_lengths)
-            y_hat, l_length, attn, ids_slice, x_mask, z_mask, (z, z_p, m_p, logs_p, m_q, logs_q) = self.generator_out
+            y_g_hat = self.net_g(x, x_lengths)
+            x = self.generator_out
             y = commons.slice_segments(y, ids_slice * self.hparams.data.hop_length, self.hparams.train.segment_size) # slice
 
             mel = spec_to_mel_torch(
