@@ -5,7 +5,7 @@ from torch import nn
 from torch.nn import functional as F
 
 import vits.commons as commons
-from . import transformer
+from .. import transformer
 
 
 class TextEncoder(nn.Module):
@@ -43,8 +43,7 @@ class TextEncoder(nn.Module):
     def forward(self, x, x_lengths):
         x = self.emb(x) * math.sqrt(self.hidden_channels)  # [b, t, h]
         x = torch.transpose(x, 1, -1)  # [b, h, t]
-        x_mask = torch.unsqueeze(commons.sequence_mask(
-            x_lengths, x.size(2)), 1).to(x.dtype)
+        x_mask = torch.unsqueeze(commons.sequence_mask(x_lengths, x.size(2)), 1).to(x.dtype)
 
         x = self.encoder(x * x_mask, x_mask)
         stats = self.proj(x) * x_mask

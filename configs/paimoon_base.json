@@ -2,7 +2,7 @@
   "trainer": {
     "max_epochs": 20000,
     "limit_val_batches": 1,
-    "accumulate_grad_batches": 1,
+    "accumulate_grad_batches": 4,
     "default_root_dir": "./logs"
   },
   "train": {
@@ -22,10 +22,10 @@
     "c_mel": 45,
     "c_kl": 1.0,
     "c_dur": 1.0,
-    "c_pitch": 5.0,
+    "c_pitch": 1.0,
     "c_energy": 1.0,
-    "c_p_fm": 10,
-    "c_s_fm": 10
+    "c_p_fm": 20,
+    "c_s_fm": 20
   },
   "data": {
     "training_files": "filelists/paimoon_audio_text_train_filelist.txt.cleaned",

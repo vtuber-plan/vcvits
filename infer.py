@@ -2,7 +2,7 @@ import torch
 import soundfile as sf
 import glob
 
-files = glob.glob("logs/lightning_logs/version_13/checkpoints/*.ckpt")
+files = glob.glob("logs/lightning_logs/version_0/checkpoints/*.ckpt")
 PATH = sorted(list(files))[-1]
 
 from vits.model.vits import VITS
@@ -32,7 +32,7 @@ def get_text(text, hparams):
     text_norm = torch.LongTensor(text_norm)
     return text_norm
 
-source_text = "谢谢你"
+source_text = "大家早上好呀"
 target_text = chinese_cleaners(text=source_text)
 print(target_text)
 
