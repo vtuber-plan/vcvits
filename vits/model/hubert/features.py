@@ -1,7 +1,7 @@
 import copy
 from typing import Optional, Tuple
 import random
-
+import numpy as np
 from sklearn.cluster import KMeans
 
 import torch
@@ -9,26 +9,66 @@ import torch.nn as nn
 import torch.nn.functional as F
 from torch.nn.modules.utils import consume_prefix_in_state_dict_if_present
 
+from .group_norm import Fp32GroupNorm
+from .transpose_last import TransposeLast
+from .layer_norm import Fp32LayerNorm
+
 class FeatureExtractor(nn.Module):
-    def __init__(self, hidden_size: int):
+    def __init__(self, hidden_size: int, conv_bias: bool = False, dropout: float = 0, mode: str = "default"):
         super().__init__()
-        self.conv0 = nn.Conv1d(1, hidden_size, 10, 5, bias=False)
-        self.norm0 = nn.GroupNorm(hidden_size, hidden_size)
-        self.conv1 = nn.Conv1d(hidden_size, hidden_size, 3, 2, bias=False)
-        self.conv2 = nn.Conv1d(hidden_size, hidden_size, 3, 2, bias=False)
-        self.conv3 = nn.Conv1d(hidden_size, hidden_size, 3, 2, bias=False)
-        self.conv4 = nn.Conv1d(hidden_size, hidden_size, 3, 2, bias=False)
-        self.conv5 = nn.Conv1d(hidden_size, hidden_size, 2, 2, bias=False)
-        self.conv6 = nn.Conv1d(hidden_size, hidden_size, 2, 2, bias=False)
+        self.dropout = dropout
+        self.conv_feature_layers = [(512,9,4)] + [(512,3,2)] * 4 + [(512,2,2)] * 3
+        # origin: [(512,10,5)] + [(512,3,2)] * 4 + [(512,2,2)] * 2
+        self.downsample_num = np.prod([s for d, k, s in self.conv_feature_layers])
+        self.conv_layers = nn.ModuleList()
+
+        in_d = 1
+        for i, (dim, kernel, stride) in enumerate(self.conv_feature_layers):
+            conv = FeatureExtractor.block(in_d, dim, kernel, stride,
+                is_layer_norm=mode == "layer_norm",
+                is_group_norm=mode == "default" and i == 0,
+                conv_bias=conv_bias,
+            )
+            self.conv_layers.append(conv)
+            in_d = dim
+    
+    @staticmethod
+    def block(n_in, n_out, k, stride, is_layer_norm=False, is_group_norm=False, conv_bias=False, dropout=0):
+        def make_conv():
+            conv = nn.Conv1d(n_in, n_out, k, stride=stride, bias=conv_bias)
+            nn.init.kaiming_normal_(conv.weight)
+            return conv
+
+        assert (
+            is_layer_norm and is_group_norm
+        ) == False, "layer norm and group norm are exclusive"
+
+        if is_layer_norm:
+            return nn.Sequential(
+                make_conv(),
+                nn.Dropout(p=dropout),
+                nn.Sequential(
+                    TransposeLast(),
+                    Fp32LayerNorm(n_out, elementwise_affine=True),
+                    TransposeLast(),
+                ),
+                nn.GELU(),
+            )
+        elif is_group_norm:
+            return nn.Sequential(
+                make_conv(),
+                nn.Dropout(p=dropout),
+                Fp32GroupNorm(n_out, n_out, affine=True),
+                nn.GELU(),
+            )
+        else:
+            return nn.Sequential(make_conv(), nn.Dropout(p=dropout), nn.GELU())
 
     def forward(self, x: torch.Tensor) -> torch.Tensor:
-        x = F.gelu(self.norm0(self.conv0(x)))
-        x = F.gelu(self.conv1(x))
-        x = F.gelu(self.conv2(x))
-        x = F.gelu(self.conv3(x))
-        x = F.gelu(self.conv4(x))
-        x = F.gelu(self.conv5(x))
-        x = F.gelu(self.conv6(x))
+        # Bx1xT -> BxCxT
+        for conv in self.conv_layers:
+            x = conv(x)
+
         return x
 
 class FeatureProjection(nn.Module):

@@ -27,9 +27,10 @@ class ContentEncoder(nn.Module):
         x_encoded, _ = self.hubert.encode(wav)
         x_out = self.hubert.proj(x_encoded).transpose(1, -1)
 
-        x_mask = torch.unsqueeze(commons.sequence_mask((x_lengths / 320).int(), x_out.size(2)), 1).to(x.dtype)
+        n_downsample = self.hubert.feature_extractor.downsample_num
+        x_mask = torch.unsqueeze(commons.sequence_mask((x_lengths / n_downsample).int(), x_out.size(2)), 1).to(x.dtype)
    
         stats = self.proj(x_out) * x_mask
 
         m, logs = torch.split(stats, self.out_channels, dim=1)
-        return x, m, logs, x_mask
+        return x_out, m, logs, x_mask
