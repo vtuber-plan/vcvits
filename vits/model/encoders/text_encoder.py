@@ -5,7 +5,7 @@ from torch import nn
 from torch.nn import functional as F
 
 import vits.commons as commons
-from .. import transformer
+from ..transformer.relative_attention_transformer import TransformerEncoder
 
 
 class TextEncoder(nn.Module):
@@ -31,7 +31,7 @@ class TextEncoder(nn.Module):
         self.emb = nn.Embedding(n_vocab, hidden_channels)
         nn.init.normal_(self.emb.weight, 0.0, hidden_channels**-0.5)
 
-        self.encoder = transformer.TransformerEncoder(
+        self.encoder = TransformerEncoder(
             hidden_channels,
             filter_channels,
             n_heads,

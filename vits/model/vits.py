@@ -12,7 +12,7 @@ import pytorch_lightning as pl
 from .discriminators.multi_scale_discriminator import MultiScaleDiscriminator
 from .discriminators.multi_period_discriminator import MultiPeriodDiscriminator
 
-from .synthesizer_trn import SynthesizerTrn
+from .synthesizers.synthesizer_tts import SynthesizerTTS
 
 from ..text.symbols import symbols
 from ..mel_processing import spec_to_mel_torch, mel_spectrogram_torch
@@ -25,7 +25,7 @@ class VITS(pl.LightningModule):
         super().__init__()
         self.save_hyperparameters(*[k for k in kwargs])
 
-        self.net_g = SynthesizerTrn(
+        self.net_g = SynthesizerTTS(
             len(symbols),
             self.hparams.data.filter_length // 2 + 1,
             self.hparams.train.segment_size // self.hparams.data.hop_length,

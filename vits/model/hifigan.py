@@ -14,7 +14,7 @@ from .discriminators.multi_period_discriminator import MultiPeriodDiscriminator
 
 from vits.model.vocoder import Generator
 
-from .synthesizer_trn import SynthesizerTrn
+from .synthesizers.synthesizer_tts import SynthesizerTrn
 from ..text.symbols import symbols
 from ..mel_processing import spec_to_mel_torch, mel_spectrogram_torch
 from .losses import discriminator_loss, kl_loss,feature_loss, generator_loss

@@ -5,30 +5,24 @@ from torch import nn
 from torch.nn import functional as F
 
 import vits.commons as commons
-from vits.model.encoders.voice_encoder import VoiceEncoder
 import vits.model.modules as modules
 from vits.model.predictors.modules import average_pitch
-from . import transformer
+from .. import transformer
 import monotonic_align
 
 from torch.nn import Conv1d, ConvTranspose1d, AvgPool1d, Conv2d
 from torch.nn.utils import weight_norm, remove_weight_norm, spectral_norm
 from vits.commons import init_weights, get_padding
 
-from .encoders.text_encoder import TextEncoder
-from .encoders.posterior_encoder import PosteriorEncoder
-from .flow import ResidualCouplingBlock
-from .predictors.duration_predictor import StochasticDurationPredictor, DurationPredictor
-from .predictors.pitch_predictor import PitchPredictor
-from .predictors.energy_predictor import EnergyPredictor
-from .vocoder import Generator
+from ..encoders.text_encoder import TextEncoder
+from ..encoders.posterior_encoder import PosteriorEncoder
+from ..flow import ResidualCouplingBlock
+from ..predictors.duration_predictor import StochasticDurationPredictor, DurationPredictor
+from ..predictors.pitch_predictor import PitchPredictor
+from ..predictors.energy_predictor import EnergyPredictor
+from ..vocoder import Generator
 
-
-class SynthesizerTrn(nn.Module):
-    """
-    Synthesizer for Training
-    """
-
+class SynthesizerTTS(nn.Module):
     def __init__(self,
                  n_vocab,
                  spec_channels,
