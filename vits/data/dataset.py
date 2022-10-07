@@ -278,9 +278,10 @@ class TextAudioSpeakerLoader(torch.utils.data.Dataset):
     def __len__(self):
         return len(self.audiopaths_sid_text)
 
-class VoiceConversionLoader(torch.utils.data.Dataset):
+class AnyVoiceConversionLoader(torch.utils.data.Dataset):
     def __init__(self, audiopaths: str, hparams):
         self.audiopaths = load_filepaths(audiopaths)
+        self.hparams = hparams
         self.text_cleaners  = hparams.text_cleaners
         self.max_wav_value  = hparams.max_wav_value
         self.sampling_rate  = hparams.sampling_rate
@@ -291,27 +292,20 @@ class VoiceConversionLoader(torch.utils.data.Dataset):
         self.cleaned_text = getattr(hparams, "cleaned_text", False)
 
         self.add_blank = hparams.add_blank
+        self.min_text_len = getattr(hparams, "min_text_len", 1)
+        self.max_text_len = getattr(hparams, "max_text_len", 190)
 
         random.seed(1234)
         random.shuffle(self.audiopaths)
 
-    def get_audio_text_pair(self, audiopath_and_text):
-        # separate filename and text
-        audiopath, text = audiopath_and_text[0], audiopath_and_text[1]
-        text = self.get_text(text)
-        spec, wav = self.get_audio(audiopath)
-        return {
-            "text": text,
-            "spec": spec,
-            "wav": wav,
-        }
-
-    def get_audio(self, filename):
+    def get_audio(self, filename: str):
         audio, sampling_rate = load_wav_to_torch(filename)
         if sampling_rate != self.sampling_rate:
             raise ValueError("{} {} SR doesn't match target {} SR".format(sampling_rate, self.sampling_rate))
         audio_norm = audio / self.max_wav_value
         audio_norm = audio_norm.unsqueeze(0)
+
+        # load spec
         spec_filename = filename.replace(".wav", ".spec.pt")
         if os.path.exists(spec_filename):
             spec = torch.load(spec_filename)
@@ -320,104 +314,43 @@ class VoiceConversionLoader(torch.utils.data.Dataset):
                     self.hop_length, self.win_length, center=False)
             spec = torch.squeeze(spec, 0)
             torch.save(spec, spec_filename)
-        return spec, audio_norm
-
-    def get_text(self, text):
-        if self.cleaned_text:
-            text_norm = cleaned_text_to_sequence(text)
+        
+        # load mel
+        mel_filename = filename.replace(".wav", ".mel.pt")
+        if os.path.exists(mel_filename):
+            melspec = torch.load(mel_filename)
         else:
-            text_norm = text_to_sequence(text, self.text_cleaners)
-        if self.add_blank:
-            text_norm = commons.intersperse(text_norm, 0)
-        text_norm = torch.LongTensor(text_norm)
-        return text_norm
+            melspec = spec_to_mel_torch(spec, self.hparams.filter_length, self.hparams.n_mel_channels, 
+                                self.hparams.sampling_rate, self.hparams.mel_fmin, self.hparams.mel_fmax)
+            melspec = torch.squeeze(melspec, 0)
+            torch.save(melspec, mel_filename)
+
+        # load pitch
+        pitch_filename = filename.replace(".wav", ".pitch.pt")
+        if os.path.exists(pitch_filename):
+            pitch_mel = torch.load(pitch_filename)
+        else:
+            pitch_mel = estimate_pitch(
+                audio=audio.numpy(), sr=sampling_rate, mel_len=melspec.shape[-1], n_fft=self.hparams.filter_length,
+                win_length=self.hparams.win_length, hop_length=self.hparams.hop_length, method='pyin',
+                normalize_mean=None, normalize_std=None, n_formants=1)
+            pitch_mel = np.log2(pitch_mel + 1e-6)
+            pitch_mel = torch.FloatTensor(pitch_mel)
+            torch.save(pitch_mel, pitch_filename)
+
+        return spec, audio_norm, melspec, pitch_mel
 
     def __getitem__(self, index):
-        return self.get_audio_text_pair(self.audiopaths_and_text[index])
+        audiopath = self.audiopaths[index]
+        spec, wav, melspec, pitch_mel = self.get_audio(audiopath)
+        energy = torch.norm(melspec.float(), dim=0, p=2).unsqueeze(0)
+        return {
+            "spec": spec,
+            "wav": wav,
+            "melspec": melspec,
+            "pitch": pitch_mel,
+            "energy": energy,
+        }
 
     def __len__(self):
-        return len(self.audiopaths_and_text)
-
-
-class MelDataset(torch.utils.data.Dataset):
-    def __init__(self, training_files, segment_size, n_fft, num_mels,
-                 hop_size, win_size, sampling_rate,  fmin, fmax, split=True, shuffle=True, n_cache_reuse=1,
-                 device=None, fmax_loss=None, fine_tuning=False, base_mels_path=None):
-        self.audio_files = training_files
-        random.seed(1234)
-        if shuffle:
-            random.shuffle(self.audio_files)
-        self.segment_size = segment_size
-        self.sampling_rate = sampling_rate
-        self.split = split
-        self.n_fft = n_fft
-        self.num_mels = num_mels
-        self.hop_size = hop_size
-        self.win_size = win_size
-        self.fmin = fmin
-        self.fmax = fmax
-        self.fmax_loss = fmax_loss
-        self.cached_wav = None
-        self.n_cache_reuse = n_cache_reuse
-        self._cache_ref_count = 0
-        self.device = device
-        self.fine_tuning = fine_tuning
-        self.base_mels_path = base_mels_path
-
-    def __getitem__(self, index):
-        filename = self.audio_files[index]
-        if self._cache_ref_count == 0:
-            audio, sampling_rate = load_wav_to_torch(filename)
-            audio = audio / MAX_WAV_VALUE
-            if not self.fine_tuning:
-                audio = nn.normalize(audio) * 0.95
-            self.cached_wav = audio
-            if sampling_rate != self.sampling_rate:
-                raise ValueError("{} SR doesn't match target {} SR".format(sampling_rate, self.sampling_rate))
-            self._cache_ref_count = self.n_cache_reuse
-        else:
-            audio = self.cached_wav
-            self._cache_ref_count -= 1
-
-        audio = torch.FloatTensor(audio)
-        audio = audio.unsqueeze(0)
-
-        if not self.fine_tuning:
-            if self.split:
-                if audio.size(1) >= self.segment_size:
-                    max_audio_start = audio.size(1) - self.segment_size
-                    audio_start = random.randint(0, max_audio_start)
-                    audio = audio[:, audio_start:audio_start+self.segment_size]
-                else:
-                    audio = torch.nn.functional.pad(audio, (0, self.segment_size - audio.size(1)), 'constant')
-
-            mel = mel_spectrogram_torch(audio, self.n_fft, self.num_mels,
-                                  self.sampling_rate, self.hop_size, self.win_size, self.fmin, self.fmax,
-                                  center=False)
-        else:
-            mel = np.load(
-                os.path.join(self.base_mels_path, os.path.splitext(os.path.split(filename)[-1])[0] + '.npy'))
-            mel = torch.from_numpy(mel)
-
-            if len(mel.shape) < 3:
-                mel = mel.unsqueeze(0)
-
-            if self.split:
-                frames_per_seg = math.ceil(self.segment_size / self.hop_size)
-
-                if audio.size(1) >= self.segment_size:
-                    mel_start = random.randint(0, mel.size(2) - frames_per_seg - 1)
-                    mel = mel[:, :, mel_start:mel_start + frames_per_seg]
-                    audio = audio[:, mel_start * self.hop_size:(mel_start + frames_per_seg) * self.hop_size]
-                else:
-                    mel = torch.nn.functional.pad(mel, (0, frames_per_seg - mel.size(2)), 'constant')
-                    audio = torch.nn.functional.pad(audio, (0, self.segment_size - audio.size(1)), 'constant')
-
-        mel_loss = mel_spectrogram(audio, self.n_fft, self.num_mels,
-                                   self.sampling_rate, self.hop_size, self.win_size, self.fmin, self.fmax_loss,
-                                   center=False)
-
-        return (mel.squeeze(), audio.squeeze(0), filename, mel_loss.squeeze())
-
-    def __len__(self):
-        return len(self.audio_files)
+        return len(self.audiopaths)

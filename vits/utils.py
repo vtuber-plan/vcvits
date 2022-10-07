@@ -142,9 +142,9 @@ def load_filepaths_and_text(filename: str, split="|") -> List[List[str]]:
         filepaths_and_text = [line.strip().split(split) for line in f]
     return filepaths_and_text
 
-def load_filepaths(filename: str, split="|") -> List[List[str]]:
+def load_filepaths(filename: str) -> List[List[str]]:
     with open(filename, encoding='utf-8') as f:
-        filepaths = [line.strip().split(split) for line in f]
+        filepaths = [line.rstrip() for line in f]
     return filepaths
 
 def get_hparams(init=True):

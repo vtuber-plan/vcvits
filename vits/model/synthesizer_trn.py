@@ -5,6 +5,7 @@ from torch import nn
 from torch.nn import functional as F
 
 import vits.commons as commons
+from vits.model.encoders.voice_encoder import VoiceEncoder
 import vits.model.modules as modules
 from vits.model.predictors.modules import average_pitch
 from . import transformer

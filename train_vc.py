@@ -9,21 +9,20 @@ from torch import nn, optim
 from torch.nn import functional as F
 from torch.utils.data import DataLoader
 from torch.nn.parallel import DistributedDataParallel as DDP
+from vits.model.vcvits import VCVITS
 
 import vits.utils as utils
-from vits.data.collate import (
-  TextAudioCollate,
-)
+from vits.data.collate import AnyVoiceConversionCollate
 
 import pytorch_lightning as pl
 
 from vits.hparams import HParams
 from vits.model.vits import VITS
-from vits.data.dataset import TextAudioLoader, TextAudioSpeakerLoader
+from vits.data.dataset import AnyVoiceConversionLoader
 
 def get_hparams() -> HParams:
     parser = argparse.ArgumentParser()
-    parser.add_argument('-c', '--config', type=str, default="./configs/paimoon_base.json", help='JSON file for configuration')
+    parser.add_argument('-c', '--config', type=str, default="./configs/paimoon_base_vc.json", help='JSON file for configuration')
     args = parser.parse_args()
 
     with open(args.config, "r") as f:
@@ -37,19 +36,19 @@ def main():
     hparams = get_hparams()
     pl.utilities.seed.seed_everything(hparams.train.seed)
 
-    train_dataset = TextAudioLoader(hparams.data.training_files, hparams.data)
-    valid_dataset = TextAudioLoader(hparams.data.validation_files, hparams.data)
+    train_dataset = AnyVoiceConversionLoader(hparams.data.training_files, hparams.data)
+    valid_dataset = AnyVoiceConversionLoader(hparams.data.validation_files, hparams.data)
 
-    collate_fn = TextAudioCollate()
+    collate_fn = AnyVoiceConversionCollate()
     train_loader = DataLoader(train_dataset, batch_size=hparams.train.batch_size, num_workers=16, shuffle=False, pin_memory=True, collate_fn=collate_fn)
     valid_loader = DataLoader(valid_dataset, batch_size=1, num_workers=16, shuffle=False, pin_memory=True, collate_fn=collate_fn)
 
-    model = VITS(**hparams)
+    model = VCVITS(**hparams)
 
     trainer_params = {
         "accelerator": "gpu",
-        "devices": [0, 1],
-        "strategy": "ddp",
+        "devices": [1],
+        # "strategy": "ddp",
     }
 
     trainer_params.update(hparams.trainer)
