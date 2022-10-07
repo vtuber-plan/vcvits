@@ -76,7 +76,7 @@ class SynthesizerSVC(nn.Module):
     def forward(self, x, x_lengths, y, y_lengths, sid=None):
         # x: [batch, text_max_length]
         # text encoding
-        x, x_mask = self.enc_p(x, x_lengths)
+        x, m_p, logs_p, x_mask = self.enc_p(x, x_lengths)
 
         # m_p, logs_p, 
         if self.n_speakers >= 1:
@@ -94,7 +94,7 @@ class SynthesizerSVC(nn.Module):
 
         z_slice, ids_slice = commons.rand_slice_segments(z, y_lengths, self.segment_size)
         o = self.dec(z_slice, g=g)
-        return o, pitch_pred, energy_pred, ids_slice, x_mask, y_mask, (z, z_p, m_q, logs_q)
+        return o, pitch_pred, energy_pred, ids_slice, x_mask, y_mask, (z, z_p, m_p, logs_p, m_q, logs_q)
 
     def infer(self, x, x_lengths, sid=None, noise_scale=1, length_scale=1, noise_scale_w=1., max_len=None):
         x, x_mask = self.enc_p(x, x_lengths)

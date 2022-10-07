@@ -18,14 +18,18 @@ class ContentEncoder(nn.Module):
                  kernel_size,
                  p_dropout):
         super().__init__()
+        self.out_channels = out_channels
         self.hubert = Hubert(out_dim=hidden_channels, extractor_hidden_size=512)
-        self.proj = nn.Conv1d(hidden_channels, out_channels, 1)
+        self.proj = nn.Conv1d(hidden_channels, out_channels * 2, 1)
 
     def forward(self, x, x_lengths):
         wav = F.pad(x, ((400 - 320) // 2, (400 - 320) // 2))
         x_encoded, _ = self.hubert.encode(wav)
         x_out = self.hubert.proj(x_encoded).transpose(1, -1)
-        x_out = self.proj(x_out)
 
         x_mask = torch.unsqueeze(commons.sequence_mask((x_lengths / 320).int(), x_out.size(2)), 1).to(x.dtype)
-        return x_out, x_mask
+   
+        stats = self.proj(x_out) * x_mask
+
+        m, logs = torch.split(stats, self.out_channels, dim=1)
+        return x, m, logs, x_mask

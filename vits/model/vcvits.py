@@ -44,7 +44,7 @@ class VCVITS(pl.LightningModule):
         # Generator
         if optimizer_idx == 0:
             self.generator_out = self.net_g(y, y_lengths, spec, spec_lengths)
-            y_hat, pitch_pred, energy_pred, ids_slice, x_mask, z_mask, (z, z_p, m_q, logs_q) = self.generator_out
+            y_hat, pitch_pred, energy_pred, ids_slice, x_mask, z_mask, (z, z_p, m_p, logs_p, m_q, logs_q) = self.generator_out
             
             y = commons.slice_segments(y, ids_slice * self.hparams.data.hop_length, self.hparams.train.segment_size) # slice
 
@@ -120,7 +120,7 @@ class VCVITS(pl.LightningModule):
     
         # Discriminator
         if optimizer_idx == 1:
-            y_hat, pitch_pred, energy_pred, ids_slice, x_mask, z_mask, (z, z_p, m_q, logs_q) = self.generator_out
+            y_hat, pitch_pred, energy_pred, ids_slice, x_mask, z_mask, (z, z_p, m_p, logs_p, m_q, logs_q) = self.generator_out
             y = commons.slice_segments(y, ids_slice * self.hparams.data.hop_length, self.hparams.train.segment_size) # slice 
             
             # MPD
