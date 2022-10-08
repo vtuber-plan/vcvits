@@ -7,7 +7,7 @@ from torch.nn import functional as F
 import vits.commons as commons
 import monotonic_align
 
-from ..encoders.content_encoder import ContentEncoder
+from ..encoders.content_encoder import NatsuBertContentEncoder, HubertContentEncoder
 from ..encoders.posterior_encoder import PosteriorEncoder
 from ..flow import ResidualCouplingBlock
 from ..predictors.duration_predictor import StochasticDurationPredictor, DurationPredictor
@@ -54,7 +54,7 @@ class SynthesizerSVC(nn.Module):
 
         self.use_sdp = use_sdp
 
-        self.enc_p = ContentEncoder(inter_channels, hidden_channels, filter_channels,
+        self.enc_p = HubertContentEncoder(inter_channels, hidden_channels, filter_channels,
                                 n_heads, n_layers, kernel_size, p_dropout)
         self.dec = Generator(inter_channels,
                              resblock,
@@ -79,10 +79,6 @@ class SynthesizerSVC(nn.Module):
         # x: [batch, text_max_length]
         # text encoding
         x, m_p, logs_p, x_mask = self.enc_p(x, x_lengths)
-        x = x[:, :, :y.shape[2]]
-        m_p = m_p[:, :, :y.shape[2]]
-        logs_p = logs_p[:, :, :y.shape[2]]
-        x_mask = x_mask[:, :, :y.shape[2]]
 
         # m_p, logs_p, 
         if self.n_speakers >= 1:
@@ -136,9 +132,8 @@ class SynthesizerSVC(nn.Module):
         else:
             g = None
 
-  
         logw = self.duration_predictor(x, x_mask, g=g)
-        
+
         w = torch.exp(logw) * x_mask * length_scale
         w_ceil = torch.ceil(w)
         y_lengths = torch.clamp_min(torch.sum(w_ceil, [1, 2]), 1).long()

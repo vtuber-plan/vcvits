@@ -44,6 +44,8 @@ class VCVITS(pl.LightningModule):
         
         # Generator
         if optimizer_idx == 0:
+            x = x[:, :, ::3]
+            x_lengths = (x_lengths / 3).int()
             self.generator_out = self.net_g(x, x_lengths, spec, spec_lengths)
             y_hat, l_length, pitch_pred, energy_pred, ids_slice, x_mask, z_mask, (z, z_p, m_p, logs_p, m_q, logs_q) = self.generator_out
             
