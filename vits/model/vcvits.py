@@ -35,6 +35,7 @@ class VCVITS(pl.LightningModule):
         self.generator_out = None
 
     def training_step(self, batch: Dict[str, torch.Tensor], batch_idx: int, optimizer_idx: int):
+        x, x_lengths = batch["wav_values"], batch["wav_lengths"]
         spec, spec_lengths = batch["spec_values"], batch["spec_lengths"]
         y, y_lengths = batch["wav_values"], batch["wav_lengths"]
         mel, mel_lengths = batch["mel_values"], batch["mel_lengths"]
@@ -43,8 +44,8 @@ class VCVITS(pl.LightningModule):
         
         # Generator
         if optimizer_idx == 0:
-            self.generator_out = self.net_g(y, y_lengths, spec, spec_lengths)
-            y_hat, pitch_pred, energy_pred, ids_slice, x_mask, z_mask, (z, z_p, m_p, logs_p, m_q, logs_q) = self.generator_out
+            self.generator_out = self.net_g(x, x_lengths, spec, spec_lengths)
+            y_hat, l_length, pitch_pred, energy_pred, ids_slice, x_mask, z_mask, (z, z_p, m_p, logs_p, m_q, logs_q) = self.generator_out
             
             y = commons.slice_segments(y, ids_slice * self.hparams.data.hop_length, self.hparams.train.segment_size) # slice
 
@@ -77,6 +78,8 @@ class VCVITS(pl.LightningModule):
 
             # kl
             loss_kl = kl_loss(z_p, logs_q, m_p, logs_p, z_mask) * self.hparams.train.c_kl
+            # dur
+            loss_dur = torch.sum(l_length.float()) * self.hparams.train.c_dur
             # mel
             loss_mel = F.l1_loss(y_mel, y_hat_mel) * self.hparams.train.c_mel
 
@@ -85,7 +88,7 @@ class VCVITS(pl.LightningModule):
             # energy
             loss_energy = F.mse_loss(energy_pred, energy) * self.hparams.train.c_energy
 
-            loss_gen_all = (loss_s_gen + loss_s_fm) + (loss_p_gen + loss_p_fm) + loss_kl + loss_mel + loss_pitch + loss_energy
+            loss_gen_all = (loss_s_gen + loss_s_fm) + (loss_p_gen + loss_p_fm) + loss_kl + loss_dur + loss_mel + loss_pitch + loss_energy
 
             grad_norm_g = commons.clip_grad_value_(self.net_g.parameters(), None)
 
@@ -120,7 +123,7 @@ class VCVITS(pl.LightningModule):
     
         # Discriminator
         if optimizer_idx == 1:
-            y_hat, pitch_pred, energy_pred, ids_slice, x_mask, z_mask, (z, z_p, m_p, logs_p, m_q, logs_q) = self.generator_out
+            y_hat, l_length, pitch_pred, energy_pred, ids_slice, x_mask, z_mask, (z, z_p, m_p, logs_p, m_q, logs_q) = self.generator_out
             y = commons.slice_segments(y, ids_slice * self.hparams.data.hop_length, self.hparams.train.segment_size) # slice 
             
             # MPD
@@ -158,6 +161,7 @@ class VCVITS(pl.LightningModule):
     def validation_step(self, batch, batch_idx):
         self.net_g.eval()
         
+        x, x_lengths = batch["wav_values"], batch["wav_lengths"]
         spec, spec_lengths = batch["spec_values"], batch["spec_lengths"]
         y, y_lengths = batch["wav_values"], batch["wav_lengths"]
         mel, mel_lengths = batch["mel_values"], batch["mel_lengths"]
@@ -170,7 +174,7 @@ class VCVITS(pl.LightningModule):
         y = y[:1]
         y_lengths = y_lengths[:1]
 
-        y_hat, mask, (z, z_p) = self.net_g.infer(y, y_lengths, max_len=1000)
+        y_hat, attn, mask, (z, z_p, m_p, logs_p) = self.net_g.infer(x, x_lengths, max_len=1000)
         y_hat_lengths = mask.sum([1,2]).long() * self.hparams.data.hop_length
 
         mel = spec_to_mel_torch(

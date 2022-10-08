@@ -2,12 +2,10 @@ import copy
 from typing import Optional, Tuple
 import random
 import numpy as np
-from sklearn.cluster import KMeans
 
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
-from torch.nn.modules.utils import consume_prefix_in_state_dict_if_present
 
 from .group_norm import Fp32GroupNorm
 from .transpose_last import TransposeLast
@@ -18,7 +16,7 @@ class FeatureExtractor(nn.Module):
         super().__init__()
         
         self.dropout = dropout
-        self.conv_feature_layers = [(4,7,2)] + [(512,5,1)] * 2 + [(512,3,1)] * 2
+        self.conv_feature_layers = [(32,7,8)] + [(64,3,2)] * 2 + [(128,3,2)] * 3 + [(256,3,2)] * 2 + [(512,3,1)]
         # origin: [(512,10,5)] + [(512,3,2)] * 4 + [(512,2,2)] * 2
         self.downsample_num = np.prod([s for d, k, s in self.conv_feature_layers])
         self.conv_layers = nn.ModuleList()

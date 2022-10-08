@@ -9,7 +9,7 @@ import torch.nn.functional as F
 from .features import FeatureExtractor, FeatureProjection, PositionalConvEmbedding
 from ..transformer.classic_transformer import TransformerEncoder
 
-class Hubert(nn.Module):
+class NatsuBert(nn.Module):
     def __init__(self, num_label_embeddings: int = 100,
                     extractor_hidden_size: int = 512,
                     hidden_size: int = 768,
@@ -68,30 +68,6 @@ class Hubert(nn.Module):
         x = self.proj(x)
         logits = self.logits(x)
         return logits, mask
-
-
-class HubertSoft(Hubert):
-    def __init__(self):
-        super().__init__()
-
-    @torch.inference_mode()
-    def units(self, wav: torch.Tensor) -> torch.Tensor:
-        wav = F.pad(wav, ((400 - 320) // 2, (400 - 320) // 2))
-        x, _ = self.encode(wav)
-        return self.proj(x)
-
-
-class HubertDiscrete(Hubert):
-    def __init__(self, kmeans):
-        super().__init__(504)
-        self.kmeans = kmeans
-
-    @torch.inference_mode()
-    def units(self, wav: torch.Tensor) -> torch.LongTensor:
-        wav = F.pad(wav, ((400 - 320) // 2, (400 - 320) // 2))
-        x, _ = self.encode(wav, layer=7)
-        x = self.kmeans.predict(x.squeeze().cpu().numpy())
-        return torch.tensor(x, dtype=torch.long, device=wav.device)
 
 def _compute_mask(
     shape: Tuple[int, int],
