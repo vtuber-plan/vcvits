@@ -62,7 +62,7 @@ class HubertContentEncoder(nn.Module):
         self.hubert = torch.hub.load("bshall/hubert:main", "hubert_soft")
         for param in self.hubert.parameters():
             param.requires_grad = False
-        self.proj = nn.Conv1d(256, out_channels * 2, 1)
+        self.pitch_proj = nn.Conv1d(1, hidden_channels, 1)
         
         self.encoder = TransformerEncoder(
             hidden_channels,
@@ -73,10 +73,12 @@ class HubertContentEncoder(nn.Module):
             p_dropout)
         self.proj = nn.Conv1d(hidden_channels, out_channels * 2, 1)
 
-    def forward(self, x, x_lengths):
+    def forward(self, x, x_lengths, pitch, pitch_lengths):
         wav = F.pad(x, ((400 - 320) // 2, (400 - 320) // 2))
         x_encoded, _ = self.hubert.encode(wav)
         hubert_out = self.hubert.proj(x_encoded).transpose(1, -1)
+
+        hubert_out = hubert_out + self.pitch_proj(pitch)
 
         # n_downsample = self.hubert.feature_extractor.downsample_num
         x_mask = torch.unsqueeze(commons.sequence_mask((x_lengths/320).int(), hubert_out.size(2)), 1).to(x.dtype)

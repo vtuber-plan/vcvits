@@ -70,18 +70,15 @@ class SynthesizerSVC(nn.Module):
         self.enc_q = PosteriorEncoder(spec_channels, inter_channels, hidden_channels, 5, 1, 16, gin_channels=gin_channels)
         self.flow = ResidualCouplingBlock(inter_channels, hidden_channels, 5, 1, 4, gin_channels=gin_channels)
 
-        self.pitch_predictor = PitchPredictor(hidden_channels, 256, 3, 0.1)
-        self.energy_predictor = EnergyPredictor(hidden_channels, 256, 3, 0.1)
-
         # self.duration_predictor = DurationPredictor(hidden_channels, 256, 3, 0.5, gin_channels=gin_channels)
         self.duration_predictor = StochasticDurationPredictor(hidden_channels, 192, 3, 0.5, 4, gin_channels=gin_channels)
 
         if n_speakers >= 1:
             self.emb_g = nn.Embedding(n_speakers, gin_channels)
 
-    def forward(self, x, x_lengths, y, y_lengths, sid=None):
-        x = self.resampler(x)
-        x_lengths = (x_lengths / 3).int()
+    def forward(self, x_wav, x_wav_lengths, x_spec, x_spec_lengths, y_spec, y_spec_lengths, sid=None):
+        x = self.resampler(x_wav)
+        x_lengths = (x_wav_lengths / 3).int()
 
         # x: [batch, text_max_length]
         # text encoding
@@ -93,7 +90,7 @@ class SynthesizerSVC(nn.Module):
         else:
             g = None
 
-        z, m_q, logs_q, y_mask = self.enc_q(y, y_lengths, g=g)
+        z, m_q, logs_q, y_mask = self.enc_q(y_spec, y_spec_lengths, g=g)
         z_p = self.flow(z, y_mask, g=g)
 
         with torch.no_grad():
@@ -120,20 +117,15 @@ class SynthesizerSVC(nn.Module):
         l_length = self.duration_predictor(x, x_mask, w, g=g)
         l_length = l_length / torch.sum(x_mask)
     
-        # Predict pitch
-        pitch_pred = self.pitch_predictor(z, y_mask)
-        # Predict energy
-        energy_pred = self.energy_predictor(z, y_mask)
-
         # expand prior
         m_p = torch.matmul(attn.squeeze(1), m_p.transpose(1, 2)).transpose(1, 2)
         logs_p = torch.matmul(attn.squeeze(1), logs_p.transpose(1, 2)).transpose(1, 2)
 
-        z_slice, ids_slice = commons.rand_slice_segments(z, y_lengths, self.segment_size)
+        z_slice, ids_slice = commons.rand_slice_segments(z, y_spec_lengths, self.segment_size)
         o = self.dec(z_slice, g=g)
-        return o, l_length, pitch_pred, energy_pred, ids_slice, x_mask, y_mask, (z, z_p, m_p, logs_p, m_q, logs_q)
+        return o, l_length, ids_slice, x_mask, y_mask, (z, z_p, m_p, logs_p, m_q, logs_q)
 
-    def infer(self, x, x_lengths, sid=None, noise_scale=1, length_scale=1, noise_scale_w=1., max_len=None):
+    def infer(self, x, x_lengths, pitch, pitch_lengths, sid=None, noise_scale=1, length_scale=1, noise_scale_w=1., max_len=None):
         x = self.resampler(x)
         x_lengths = (x_lengths / 3).int()
         

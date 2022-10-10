@@ -33,26 +33,28 @@ class VCVITS(pl.LightningModule):
             **self.hparams.model)
         self.net_period_d = MultiPeriodDiscriminator(self.hparams.model.use_spectral_norm)
         self.net_scale_d = MultiScaleDiscriminator(self.hparams.model.use_spectral_norm)
+        self.net_pitch_d = PitchDiscriminator(self.hparams.model.use_spectral_norm)
 
         self.generator_out = None
 
     def training_step(self, batch: Dict[str, torch.Tensor], batch_idx: int, optimizer_idx: int):
-        x, x_lengths = batch["wav_values"], batch["wav_lengths"]
-        spec, spec_lengths = batch["spec_values"], batch["spec_lengths"]
-        y, y_lengths = batch["wav_values"], batch["wav_lengths"]
+        x_wav, x_wav_lengths = batch["x_wav_values"], batch["x_wav_lengths"]
+        x_spec, x_spec_lengths = batch["x_spec_values"], batch["x_spec_lengths"]
+        y_wav, y_wav_lengths = batch["y_wav_values"], batch["y_wav_lengths"]
+        y_spec, y_spec_lengths = batch["y_spec_values"], batch["y_spec_lengths"]
         mel, mel_lengths = batch["mel_values"], batch["mel_lengths"]
         pitch, pitch_lengths = batch["pitch_values"], batch["pitch_lengths"]
         energy, energy_lengths = batch["energy_values"], batch["energy_lengths"]
         
         # Generator
         if optimizer_idx == 0:
-            self.generator_out = self.net_g(x, x_lengths, spec, spec_lengths)
-            y_hat, l_length, pitch_pred, energy_pred, ids_slice, x_mask, z_mask, (z, z_p, m_p, logs_p, m_q, logs_q) = self.generator_out
+            self.generator_out = self.net_g(x_wav, x_wav_lengths, x_spec, x_spec_lengths, y_spec, y_spec_lengths)
+            y_hat, l_length, ids_slice, x_mask, z_mask, (z, z_p, m_p, logs_p, m_q, logs_q) = self.generator_out
             
             y = commons.slice_segments(y, ids_slice * self.hparams.data.hop_length, self.hparams.train.segment_size) # slice
 
             mel = spec_to_mel_torch(
-                spec, 
+                y_spec, 
                 self.hparams.data.filter_length, 
                 self.hparams.data.n_mel_channels, 
                 self.hparams.data.sampling_rate,
@@ -85,12 +87,7 @@ class VCVITS(pl.LightningModule):
             # mel
             loss_mel = F.l1_loss(y_mel, y_hat_mel) * self.hparams.train.c_mel
 
-            # pitch
-            loss_pitch = F.mse_loss(pitch_pred, pitch) * self.hparams.train.c_pitch
-            # energy
-            loss_energy = F.mse_loss(energy_pred, energy) * self.hparams.train.c_energy
-
-            loss_gen_all = (loss_s_gen + loss_s_fm) + (loss_p_gen + loss_p_fm) + loss_kl + loss_dur + loss_mel + loss_pitch + loss_energy
+            loss_gen_all = (loss_s_gen + loss_s_fm) + (loss_p_gen + loss_p_fm) + loss_kl + loss_dur + loss_mel
 
             grad_norm_g = commons.clip_grad_value_(self.net_g.parameters(), None)
 
@@ -102,8 +99,6 @@ class VCVITS(pl.LightningModule):
                 "loss/g/s_fm": loss_s_fm,
                 "loss/g/mel": loss_mel,
                 "loss/g/kl": loss_kl,
-                "loss/g/pitch": loss_pitch,
-                "loss/g/energy": loss_energy,
             })
 
             scalar_dict.update({"loss/g/p_gen_{}".format(i): v for i, v in enumerate(losses_p_gen)})
@@ -176,7 +171,7 @@ class VCVITS(pl.LightningModule):
         y = y[:1]
         y_lengths = y_lengths[:1]
 
-        y_hat, attn, mask, (z, z_p, m_p, logs_p) = self.net_g.infer(x, x_lengths, max_len=1000)
+        y_hat, attn, mask, (z, z_p, m_p, logs_p) = self.net_g.infer(x, x_lengths, pitch, pitch_lengths, max_len=1000)
         y_hat_lengths = mask.sum([1,2]).long() * self.hparams.data.hop_length
 
         mel = spec_to_mel_torch(

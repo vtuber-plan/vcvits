@@ -198,10 +198,15 @@ class AnyVoiceConversionCollate():
             energy_lengths[i] = energy.size(1)
         
         ret = {
-            "spec_values": spec_padded,
-            "spec_lengths": spec_lengths,
-            "wav_values": wav_padded,
-            "wav_lengths": wav_lengths,
+            "x_spec_values": spec_padded,
+            "x_spec_lengths": spec_lengths,
+            "x_wav_values": wav_padded,
+            "x_wav_lengths": wav_lengths,
+            
+            "y_spec_values": spec_padded,
+            "y_spec_lengths": spec_lengths,
+            "y_wav_values": wav_padded,
+            "y_wav_lengths": wav_lengths,
             "mel_values": mel_padded,
             "mel_lengths": mel_lengths,
             "pitch_values": pitch_padded,
