@@ -3,7 +3,9 @@ import math
 import torch
 from torch import nn
 from torch.nn import functional as F
-import torch, torchaudio
+import torch
+
+from vits.model.transformer.relative_attention_transformer import TransformerEncoder
 
 from ..natsubert.natsubert import NatsuBert
 from ..hubert.hubert import Hubert
@@ -56,19 +58,31 @@ class HubertContentEncoder(nn.Module):
         self.n_fft = n_fft
         self.hop_size = hop_size
         self.out_channels = out_channels
-        self.hubert = torch.hub.load("bshall/hubert:main", "hubert_soft").cuda()
-        self.x_proj = nn.Conv1d(256, out_channels, 1)
+        
+        self.hubert = torch.hub.load("bshall/hubert:main", "hubert_soft")
+        for param in self.hubert.parameters():
+            param.requires_grad = False
         self.proj = nn.Conv1d(256, out_channels * 2, 1)
+        
+        self.encoder = TransformerEncoder(
+            hidden_channels,
+            filter_channels,
+            n_heads,
+            n_layers,
+            kernel_size,
+            p_dropout)
+        self.proj = nn.Conv1d(hidden_channels, out_channels * 2, 1)
 
     def forward(self, x, x_lengths):
         wav = F.pad(x, ((400 - 320) // 2, (400 - 320) // 2))
         x_encoded, _ = self.hubert.encode(wav)
         hubert_out = self.hubert.proj(x_encoded).transpose(1, -1)
-        x_out = self.x_proj(hubert_out)
 
         # n_downsample = self.hubert.feature_extractor.downsample_num
-        x_mask = torch.unsqueeze(commons.sequence_mask(x_lengths, x_out.size(2)), 1).to(x.dtype)
+        x_mask = torch.unsqueeze(commons.sequence_mask((x_lengths/320).int(), hubert_out.size(2)), 1).to(x.dtype)
    
+        x_out = self.encoder(hubert_out * x_mask, x_mask)
+
         stats = self.proj(hubert_out) * x_mask
 
         m, logs = torch.split(stats, self.out_channels, dim=1)

@@ -6,6 +6,8 @@ from torch import nn
 from torch.nn import functional as F
 from torch import optim
 
+import torchaudio
+
 
 import pytorch_lightning as pl
 
@@ -44,8 +46,6 @@ class VCVITS(pl.LightningModule):
         
         # Generator
         if optimizer_idx == 0:
-            x = x[:, :, ::3]
-            x_lengths = (x_lengths / 3).int()
             self.generator_out = self.net_g(x, x_lengths, spec, spec_lengths)
             y_hat, l_length, pitch_pred, energy_pred, ids_slice, x_mask, z_mask, (z, z_p, m_p, logs_p, m_q, logs_q) = self.generator_out
             
@@ -227,11 +227,9 @@ class VCVITS(pl.LightningModule):
             self.hparams.train.learning_rate, 
             betas=self.hparams.train.betas, 
             eps=self.hparams.train.eps)
-        self.scheduler_g = torch.optim.lr_scheduler.ExponentialLR(self.optim_g,
-                            gamma=self.hparams.train.lr_decay)
+        self.scheduler_g = torch.optim.lr_scheduler.ExponentialLR(self.optim_g, gamma=self.hparams.train.lr_decay)
         self.scheduler_g.last_epoch = self.current_epoch - 1
-        self.scheduler_d = torch.optim.lr_scheduler.ExponentialLR(self.optim_d, 
-                            gamma=self.hparams.train.lr_decay)
+        self.scheduler_d = torch.optim.lr_scheduler.ExponentialLR(self.optim_d, gamma=self.hparams.train.lr_decay)
         self.scheduler_d.last_epoch = self.current_epoch - 1
 
         return [self.optim_g, self.optim_d], [self.scheduler_g, self.scheduler_d]

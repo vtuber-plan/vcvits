@@ -1,5 +1,6 @@
 
 import math
+import torchaudio
 import torch
 from torch import nn
 from torch.nn import functional as F
@@ -54,6 +55,8 @@ class SynthesizerSVC(nn.Module):
 
         self.use_sdp = use_sdp
 
+        self.resampler = torchaudio.transforms.Resample(orig_freq=48000, new_freq=16000)
+
         self.enc_p = HubertContentEncoder(inter_channels, hidden_channels, filter_channels,
                                 n_heads, n_layers, kernel_size, p_dropout)
         self.dec = Generator(inter_channels,
@@ -70,12 +73,16 @@ class SynthesizerSVC(nn.Module):
         self.pitch_predictor = PitchPredictor(hidden_channels, 256, 3, 0.1)
         self.energy_predictor = EnergyPredictor(hidden_channels, 256, 3, 0.1)
 
-        self.duration_predictor = DurationPredictor(hidden_channels, 256, 3, 0.5, gin_channels=gin_channels)
+        # self.duration_predictor = DurationPredictor(hidden_channels, 256, 3, 0.5, gin_channels=gin_channels)
+        self.duration_predictor = StochasticDurationPredictor(hidden_channels, 192, 3, 0.5, 4, gin_channels=gin_channels)
 
         if n_speakers >= 1:
             self.emb_g = nn.Embedding(n_speakers, gin_channels)
 
     def forward(self, x, x_lengths, y, y_lengths, sid=None):
+        x = self.resampler(x)
+        x_lengths = (x_lengths / 3).int()
+
         # x: [batch, text_max_length]
         # text encoding
         x, m_p, logs_p, x_mask = self.enc_p(x, x_lengths)
@@ -89,7 +96,6 @@ class SynthesizerSVC(nn.Module):
         z, m_q, logs_q, y_mask = self.enc_q(y, y_lengths, g=g)
         z_p = self.flow(z, y_mask, g=g)
 
-        
         with torch.no_grad():
             # negative cross-entropy
             s_p_sq_r = torch.exp(-2 * logs_p)  # [b, d, t]
@@ -108,9 +114,11 @@ class SynthesizerSVC(nn.Module):
         # attn： [batch, 1, audio_max_frame, text_max_length] 
         w = attn.sum(2)
 
-        logw_ = torch.log(w + 1e-6) * x_mask
-        logw = self.duration_predictor(x, x_mask, g=g)
-        l_length = torch.sum((logw - logw_)**2, [1, 2]) / torch.sum(x_mask)  # for averaging
+        # logw_ = torch.log(w + 1e-6) * x_mask
+        # logw = self.duration_predictor(x, x_mask, g=g)
+        # l_length = torch.sum((logw - logw_)**2, [1, 2]) / torch.sum(x_mask)  # for averaging
+        l_length = self.duration_predictor(x, x_mask, w, g=g)
+        l_length = l_length / torch.sum(x_mask)
     
         # Predict pitch
         pitch_pred = self.pitch_predictor(z, y_mask)
@@ -126,13 +134,17 @@ class SynthesizerSVC(nn.Module):
         return o, l_length, pitch_pred, energy_pred, ids_slice, x_mask, y_mask, (z, z_p, m_p, logs_p, m_q, logs_q)
 
     def infer(self, x, x_lengths, sid=None, noise_scale=1, length_scale=1, noise_scale_w=1., max_len=None):
+        x = self.resampler(x)
+        x_lengths = (x_lengths / 3).int()
+        
         x, m_p, logs_p, x_mask = self.enc_p(x, x_lengths)
         if self.n_speakers > 0:
             g = self.emb_g(sid).unsqueeze(-1)  # [b, h, 1]
         else:
             g = None
 
-        logw = self.duration_predictor(x, x_mask, g=g)
+        # logw = self.duration_predictor(x, x_mask, g=g)
+        logw = self.duration_predictor(x, x_mask, g=g, reverse=True, noise_scale=noise_scale_w)
 
         w = torch.exp(logw) * x_mask * length_scale
         w_ceil = torch.ceil(w)
