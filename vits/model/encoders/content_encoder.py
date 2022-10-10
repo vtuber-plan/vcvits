@@ -78,7 +78,9 @@ class HubertContentEncoder(nn.Module):
         x_encoded, _ = self.hubert.encode(wav)
         hubert_out = self.hubert.proj(x_encoded).transpose(1, -1)
 
-        hubert_out = hubert_out + self.pitch_proj(pitch)
+        # interpolated_pitch = torch.nn.functional.interpolate(pitch, scale_factor=(512/960), mode='nearest')
+        interpolated_pitch = torch.nn.functional.interpolate(pitch, size=(hubert_out.shape[2]), mode='nearest')
+        hubert_out = hubert_out + self.pitch_proj(interpolated_pitch)
 
         # n_downsample = self.hubert.feature_extractor.downsample_num
         x_mask = torch.unsqueeze(commons.sequence_mask((x_lengths/320).int(), hubert_out.size(2)), 1).to(x.dtype)

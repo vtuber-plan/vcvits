@@ -33,7 +33,7 @@ class VCVITS(pl.LightningModule):
             **self.hparams.model)
         self.net_period_d = MultiPeriodDiscriminator(self.hparams.model.use_spectral_norm)
         self.net_scale_d = MultiScaleDiscriminator(self.hparams.model.use_spectral_norm)
-        self.net_pitch_d = PitchDiscriminator(self.hparams.model.use_spectral_norm)
+        # self.net_pitch_d = PitchDiscriminator(self.hparams.model.use_spectral_norm)
 
         self.generator_out = None
 
@@ -48,10 +48,10 @@ class VCVITS(pl.LightningModule):
         
         # Generator
         if optimizer_idx == 0:
-            self.generator_out = self.net_g(x_wav, x_wav_lengths, x_spec, x_spec_lengths, y_spec, y_spec_lengths)
+            self.generator_out = self.net_g(x_wav, x_wav_lengths, pitch, pitch_lengths, y_spec, y_spec_lengths)
             y_hat, l_length, ids_slice, x_mask, z_mask, (z, z_p, m_p, logs_p, m_q, logs_q) = self.generator_out
             
-            y = commons.slice_segments(y, ids_slice * self.hparams.data.hop_length, self.hparams.train.segment_size) # slice
+            y = commons.slice_segments(y_wav, ids_slice * self.hparams.data.hop_length, self.hparams.train.segment_size) # slice
 
             mel = spec_to_mel_torch(
                 y_spec, 
@@ -120,8 +120,8 @@ class VCVITS(pl.LightningModule):
     
         # Discriminator
         if optimizer_idx == 1:
-            y_hat, l_length, pitch_pred, energy_pred, ids_slice, x_mask, z_mask, (z, z_p, m_p, logs_p, m_q, logs_q) = self.generator_out
-            y = commons.slice_segments(y, ids_slice * self.hparams.data.hop_length, self.hparams.train.segment_size) # slice 
+            y_hat, l_length, ids_slice, x_mask, z_mask, (z, z_p, m_p, logs_p, m_q, logs_q) = self.generator_out
+            y = commons.slice_segments(y_wav, ids_slice * self.hparams.data.hop_length, self.hparams.train.segment_size) # slice 
             
             # MPD
             y_d_hat_r, y_d_hat_g, _, _ = self.net_period_d(y, y_hat.detach())
@@ -158,24 +158,25 @@ class VCVITS(pl.LightningModule):
     def validation_step(self, batch, batch_idx):
         self.net_g.eval()
         
-        x, x_lengths = batch["wav_values"], batch["wav_lengths"]
-        spec, spec_lengths = batch["spec_values"], batch["spec_lengths"]
-        y, y_lengths = batch["wav_values"], batch["wav_lengths"]
+        x_wav, x_wav_lengths = batch["x_wav_values"], batch["x_wav_lengths"]
+        x_spec, x_spec_lengths = batch["x_spec_values"], batch["x_spec_lengths"]
+        y_wav, y_wav_lengths = batch["y_wav_values"], batch["y_wav_lengths"]
+        y_spec, y_spec_lengths = batch["y_spec_values"], batch["y_spec_lengths"]
         mel, mel_lengths = batch["mel_values"], batch["mel_lengths"]
         pitch, pitch_lengths = batch["pitch_values"], batch["pitch_lengths"]
         energy, energy_lengths = batch["energy_values"], batch["energy_lengths"]
         
         # remove else
-        spec = spec[:1]
-        spec_lengths = spec_lengths[:1]
-        y = y[:1]
-        y_lengths = y_lengths[:1]
+        x_spec = x_spec[:1]
+        x_spec_lengths = x_spec_lengths[:1]
+        y_spec = y_spec[:1]
+        y_spec_lengths = y_spec_lengths[:1]
 
-        y_hat, attn, mask, (z, z_p, m_p, logs_p) = self.net_g.infer(x, x_lengths, pitch, pitch_lengths, max_len=1000)
+        y_hat, attn, mask, (z, z_p, m_p, logs_p) = self.net_g.infer(x_wav, x_wav_lengths, pitch, pitch_lengths, max_len=1000)
         y_hat_lengths = mask.sum([1,2]).long() * self.hparams.data.hop_length
 
         mel = spec_to_mel_torch(
-            spec, 
+            y_spec, 
             self.hparams.data.filter_length, 
             self.hparams.data.n_mel_channels, 
             self.hparams.data.sampling_rate,
@@ -199,7 +200,7 @@ class VCVITS(pl.LightningModule):
         }
         # if self.global_step == 0:
         image_dict.update({"gt/mel": utils.plot_spectrogram_to_numpy(mel[0].cpu().numpy())})
-        audio_dict.update({"gt/audio": y[0,:,:y_lengths[0]]})
+        audio_dict.update({"gt/audio": y_wav[0,:,:y_wav_lengths[0]]})
 
         tensorboard = self.logger.experiment
         utils.summarize(

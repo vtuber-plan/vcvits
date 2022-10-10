@@ -76,13 +76,13 @@ class SynthesizerSVC(nn.Module):
         if n_speakers >= 1:
             self.emb_g = nn.Embedding(n_speakers, gin_channels)
 
-    def forward(self, x_wav, x_wav_lengths, x_spec, x_spec_lengths, y_spec, y_spec_lengths, sid=None):
+    def forward(self, x_wav, x_wav_lengths, pitch, pitch_lengths, y_spec, y_spec_lengths, sid=None):
         x = self.resampler(x_wav)
         x_lengths = (x_wav_lengths / 3).int()
 
         # x: [batch, text_max_length]
         # text encoding
-        x, m_p, logs_p, x_mask = self.enc_p(x, x_lengths)
+        x, m_p, logs_p, x_mask = self.enc_p(x, x_lengths, pitch, pitch_lengths)
 
         # m_p, logs_p, 
         if self.n_speakers >= 1:
@@ -129,7 +129,7 @@ class SynthesizerSVC(nn.Module):
         x = self.resampler(x)
         x_lengths = (x_lengths / 3).int()
         
-        x, m_p, logs_p, x_mask = self.enc_p(x, x_lengths)
+        x, m_p, logs_p, x_mask = self.enc_p(x, x_lengths, pitch, pitch_lengths)
         if self.n_speakers > 0:
             g = self.emb_g(sid).unsqueeze(-1)  # [b, h, 1]
         else:

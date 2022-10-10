@@ -4,6 +4,8 @@ import os
 import random
 import numpy as np
 import librosa
+from librosa import pyin
+# from natsupitch.core import pyin
 import torch
 import torch.utils.data
 from torch import nn
@@ -35,7 +37,7 @@ def estimate_pitch(audio: np.ndarray, sr: int, mel_len: int, n_fft: int, win_len
         pad_size = int((n_fft-hop_length)/2)
         snd = np.pad(snd, (pad_size, pad_size), mode='reflect')
 
-        pitch_mel, voiced_flag, voiced_probs = librosa.pyin(
+        pitch_mel, voiced_flag, voiced_probs = pyin(
             snd,
             fmin=librosa.note_to_hz('C2'),
             fmax=librosa.note_to_hz('C7'),
@@ -334,7 +336,7 @@ class AnyVoiceConversionLoader(torch.utils.data.Dataset):
                 audio=audio.numpy(), sr=sampling_rate, mel_len=melspec.shape[-1], n_fft=self.hparams.filter_length,
                 win_length=self.hparams.win_length, hop_length=self.hparams.hop_length, method='pyin',
                 normalize_mean=None, normalize_std=None, n_formants=1)
-            pitch_mel = np.log2(pitch_mel + 1e-6)
+            pitch_mel = np.log10(pitch_mel + 1e-6)
             pitch_mel = torch.FloatTensor(pitch_mel)
             torch.save(pitch_mel, pitch_filename)
 
