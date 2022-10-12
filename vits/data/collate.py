@@ -153,66 +153,93 @@ class AnyVoiceConversionCollate():
         """
         # Right zero-pad all one-hot text sequences to max input length
         _, ids_sorted_decreasing = torch.sort(
-            torch.LongTensor([x["spec"].size(1) for x in batch]),
+            torch.LongTensor([x["x_spec"].size(1) for x in batch]),
             dim=0, descending=True)
 
-        max_spec_len = max([x["spec"].size(1) for x in batch])
-        max_wav_len = max([x["wav"].size(1) for x in batch])
-        max_mel_len = max([x["melspec"].size(1) for x in batch])
-        max_pitch_len = max([x["pitch"].size(1) for x in batch])
-        max_energy_len = max([x["energy"].size(1) for x in batch])
+        max_x_spec_len = max([x["x_spec"].size(1) for x in batch])
+        max_x_wav_len = max([x["x_wav"].size(1) for x in batch])
+        max_x_mel_len = max([x["x_mel"].size(1) for x in batch])
+        max_x_pitch_len = max([x["x_pitch"].size(1) for x in batch])
 
-        spec_lengths = torch.LongTensor(len(batch))
-        wav_lengths = torch.LongTensor(len(batch))
-        mel_lengths = torch.LongTensor(len(batch))
-        pitch_lengths = torch.LongTensor(len(batch))
-        energy_lengths = torch.LongTensor(len(batch))
+        max_y_spec_len = max([x["y_spec"].size(1) for x in batch])
+        max_y_wav_len = max([x["y_wav"].size(1) for x in batch])
+        max_y_mel_len = max([x["y_mel"].size(1) for x in batch])
+        max_y_pitch_len = max([x["y_pitch"].size(1) for x in batch])
 
-        spec_padded = torch.zeros(len(batch), batch[0]["spec"].size(0), max_spec_len, dtype=torch.float32)
-        wav_padded = torch.zeros(len(batch), 1, max_wav_len, dtype=torch.float32)
-        mel_padded = torch.zeros(len(batch), batch[0]["melspec"].size(0), max_mel_len, dtype=torch.float32)
-        pitch_padded = torch.zeros(len(batch), 1, max_pitch_len, dtype=torch.float32)
-        energy_padded = torch.zeros(len(batch), 1, max_energy_len, dtype=torch.float32)
+        x_spec_lengths = torch.LongTensor(len(batch))
+        x_wav_lengths = torch.LongTensor(len(batch))
+        x_mel_lengths = torch.LongTensor(len(batch))
+        x_pitch_lengths = torch.LongTensor(len(batch))
+
+        y_spec_lengths = torch.LongTensor(len(batch))
+        y_wav_lengths = torch.LongTensor(len(batch))
+        y_mel_lengths = torch.LongTensor(len(batch))
+        y_pitch_lengths = torch.LongTensor(len(batch))
+
+        x_spec_padded = torch.zeros(len(batch), batch[0]["x_spec"].size(0), max_x_spec_len, dtype=torch.float32)
+        x_wav_padded = torch.zeros(len(batch), 1, max_x_wav_len, dtype=torch.float32)
+        x_mel_padded = torch.zeros(len(batch), batch[0]["x_mel"].size(0), max_x_mel_len, dtype=torch.float32)
+        x_pitch_padded = torch.zeros(len(batch), 1, max_x_pitch_len, dtype=torch.float32)
+
+        y_spec_padded = torch.zeros(len(batch), batch[0]["x_spec"].size(0), max_y_spec_len, dtype=torch.float32)
+        y_wav_padded = torch.zeros(len(batch), 1, max_y_wav_len, dtype=torch.float32)
+        y_mel_padded = torch.zeros(len(batch), batch[0]["x_mel"].size(0), max_y_mel_len, dtype=torch.float32)
+        y_pitch_padded = torch.zeros(len(batch), 1, max_y_pitch_len, dtype=torch.float32)
 
         for i in range(len(ids_sorted_decreasing)):
             row = batch[ids_sorted_decreasing[i]]
 
-            spec = row["spec"]
-            spec_padded[i, :, :spec.size(1)] = spec
-            spec_lengths[i] = spec.size(1)
+            spec = row["x_spec"]
+            x_spec_padded[i, :, :spec.size(1)] = spec
+            x_spec_lengths[i] = spec.size(1)
 
-            wav = row["wav"]
-            wav_padded[i, :, :wav.size(1)] = wav
-            wav_lengths[i] = wav.size(1)
+            wav = row["x_wav"]
+            x_wav_padded[i, :, :wav.size(1)] = wav
+            x_wav_lengths[i] = wav.size(1)
 
-            mel = row["melspec"]
-            mel_padded[i, :, :mel.size(1)] = mel
-            mel_lengths[i] = mel.size(1)
+            mel = row["x_mel"]
+            x_mel_padded[i, :, :mel.size(1)] = mel
+            x_mel_lengths[i] = mel.size(1)
 
-            pitch = row["pitch"]
-            pitch_padded[i, :, :pitch.size(1)] = pitch
-            pitch_lengths[i] = pitch.size(1)
+            pitch = row["x_pitch"]
+            x_pitch_padded[i, :, :pitch.size(1)] = pitch
+            x_pitch_lengths[i] = pitch.size(1)
 
-            energy = row["energy"]
-            energy_padded[i, :, :energy.size(1)] = energy
-            energy_lengths[i] = energy.size(1)
-        
+            spec = row["y_spec"]
+            y_spec_padded[i, :, :spec.size(1)] = spec
+            y_spec_lengths[i] = spec.size(1)
+
+            wav = row["y_wav"]
+            y_wav_padded[i, :, :wav.size(1)] = wav
+            y_wav_lengths[i] = wav.size(1)
+
+            mel = row["y_mel"]
+            y_mel_padded[i, :, :mel.size(1)] = mel
+            y_mel_lengths[i] = mel.size(1)
+
+            pitch = row["y_pitch"]
+            y_pitch_padded[i, :, :pitch.size(1)] = pitch
+            y_pitch_lengths[i] = pitch.size(1)
+
+
         ret = {
-            "x_spec_values": spec_padded,
-            "x_spec_lengths": spec_lengths,
-            "x_wav_values": wav_padded,
-            "x_wav_lengths": wav_lengths,
-            
-            "y_spec_values": spec_padded,
-            "y_spec_lengths": spec_lengths,
-            "y_wav_values": wav_padded,
-            "y_wav_lengths": wav_lengths,
-            "mel_values": mel_padded,
-            "mel_lengths": mel_lengths,
-            "pitch_values": pitch_padded,
-            "pitch_lengths": pitch_lengths,
-            "energy_values": energy_padded,
-            "energy_lengths": energy_lengths,
+            "x_spec_values": x_spec_padded,
+            "x_spec_lengths": x_spec_lengths,
+            "x_wav_values": x_wav_padded,
+            "x_wav_lengths": x_wav_lengths,
+            "x_mel_values": x_mel_padded,
+            "x_mel_lengths": x_mel_lengths,
+            "x_pitch_values": x_pitch_padded,
+            "x_pitch_lengths": x_pitch_lengths,
+
+            "y_spec_values": y_spec_padded,
+            "y_spec_lengths": y_spec_lengths,
+            "y_wav_values": y_wav_padded,
+            "y_wav_lengths": y_wav_lengths,
+            "y_mel_values": y_mel_padded,
+            "y_mel_lengths": y_mel_lengths,
+            "y_pitch_values": y_pitch_padded,
+            "y_pitch_lengths": y_pitch_lengths,
         }
 
         if self.return_ids:

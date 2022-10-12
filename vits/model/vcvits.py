@@ -6,9 +6,6 @@ from torch import nn
 from torch.nn import functional as F
 from torch import optim
 
-import torchaudio
-
-
 import pytorch_lightning as pl
 
 from .discriminators.multi_scale_discriminator import MultiScaleDiscriminator
@@ -40,15 +37,14 @@ class VCVITS(pl.LightningModule):
     def training_step(self, batch: Dict[str, torch.Tensor], batch_idx: int, optimizer_idx: int):
         x_wav, x_wav_lengths = batch["x_wav_values"], batch["x_wav_lengths"]
         x_spec, x_spec_lengths = batch["x_spec_values"], batch["x_spec_lengths"]
+        x_mel, x_mel_lengths = batch["x_mel_values"], batch["x_mel_lengths"]
+        x_pitch, x_pitch_lengths = batch["x_pitch_values"], batch["x_pitch_lengths"]
         y_wav, y_wav_lengths = batch["y_wav_values"], batch["y_wav_lengths"]
         y_spec, y_spec_lengths = batch["y_spec_values"], batch["y_spec_lengths"]
-        mel, mel_lengths = batch["mel_values"], batch["mel_lengths"]
-        pitch, pitch_lengths = batch["pitch_values"], batch["pitch_lengths"]
-        energy, energy_lengths = batch["energy_values"], batch["energy_lengths"]
         
         # Generator
         if optimizer_idx == 0:
-            self.generator_out = self.net_g(x_wav, x_wav_lengths, pitch, pitch_lengths, y_spec, y_spec_lengths)
+            self.generator_out = self.net_g(x_wav, x_wav_lengths, x_pitch, x_pitch_lengths, y_spec, y_spec_lengths)
             y_hat, l_length, ids_slice, x_mask, z_mask, (z, z_p, m_p, logs_p, m_q, logs_q) = self.generator_out
             
             y = commons.slice_segments(y_wav, ids_slice * self.hparams.data.hop_length, self.hparams.train.segment_size) # slice
@@ -57,7 +53,7 @@ class VCVITS(pl.LightningModule):
                 y_spec, 
                 self.hparams.data.filter_length, 
                 self.hparams.data.n_mel_channels, 
-                self.hparams.data.sampling_rate,
+                self.hparams.data.target_sampling_rate,
                 self.hparams.data.mel_fmin, 
                 self.hparams.data.mel_fmax)
             y_mel = commons.slice_segments(mel, ids_slice, self.hparams.train.segment_size // self.hparams.data.hop_length)
@@ -65,7 +61,7 @@ class VCVITS(pl.LightningModule):
                 y_hat.squeeze(1), 
                 self.hparams.data.filter_length, 
                 self.hparams.data.n_mel_channels, 
-                self.hparams.data.sampling_rate, 
+                self.hparams.data.target_sampling_rate, 
                 self.hparams.data.hop_length, 
                 self.hparams.data.win_length, 
                 self.hparams.data.mel_fmin, 
@@ -160,33 +156,32 @@ class VCVITS(pl.LightningModule):
         
         x_wav, x_wav_lengths = batch["x_wav_values"], batch["x_wav_lengths"]
         x_spec, x_spec_lengths = batch["x_spec_values"], batch["x_spec_lengths"]
+        x_mel, x_mel_lengths = batch["x_mel_values"], batch["x_mel_lengths"]
+        x_pitch, x_pitch_lengths = batch["x_pitch_values"], batch["x_pitch_lengths"]
         y_wav, y_wav_lengths = batch["y_wav_values"], batch["y_wav_lengths"]
         y_spec, y_spec_lengths = batch["y_spec_values"], batch["y_spec_lengths"]
-        mel, mel_lengths = batch["mel_values"], batch["mel_lengths"]
-        pitch, pitch_lengths = batch["pitch_values"], batch["pitch_lengths"]
-        energy, energy_lengths = batch["energy_values"], batch["energy_lengths"]
-        
+
         # remove else
         x_spec = x_spec[:1]
         x_spec_lengths = x_spec_lengths[:1]
         y_spec = y_spec[:1]
         y_spec_lengths = y_spec_lengths[:1]
 
-        y_hat, attn, mask, (z, z_p, m_p, logs_p) = self.net_g.infer(x_wav, x_wav_lengths, pitch, pitch_lengths, max_len=1000)
+        y_hat, attn, mask, (z, z_p, m_p, logs_p) = self.net_g.infer(x_wav, x_wav_lengths, x_pitch, x_pitch_lengths, max_len=1000)
         y_hat_lengths = mask.sum([1,2]).long() * self.hparams.data.hop_length
 
         mel = spec_to_mel_torch(
             y_spec, 
             self.hparams.data.filter_length, 
             self.hparams.data.n_mel_channels, 
-            self.hparams.data.sampling_rate,
+            self.hparams.data.target_sampling_rate,
             self.hparams.data.mel_fmin, 
             self.hparams.data.mel_fmax)
         y_hat_mel = mel_spectrogram_torch(
             y_hat.squeeze(1).float(),
             self.hparams.data.filter_length,
             self.hparams.data.n_mel_channels,
-            self.hparams.data.sampling_rate,
+            self.hparams.data.target_sampling_rate,
             self.hparams.data.hop_length,
             self.hparams.data.win_length,
             self.hparams.data.mel_fmin,
@@ -208,7 +203,7 @@ class VCVITS(pl.LightningModule):
             global_step=self.global_step, 
             images=image_dict,
             audios=audio_dict,
-            audio_sampling_rate=self.hparams.data.sampling_rate
+            audio_sampling_rate=self.hparams.data.target_sampling_rate
             )
 
 

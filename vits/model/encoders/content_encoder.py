@@ -62,7 +62,11 @@ class HubertContentEncoder(nn.Module):
         self.hubert = torch.hub.load("bshall/hubert:main", "hubert_soft")
         for param in self.hubert.parameters():
             param.requires_grad = False
-        self.pitch_proj = nn.Conv1d(1, hidden_channels, 1)
+        self.pitch_proj = nn.Sequential(
+            nn.Conv1d(1, hidden_channels // 4, 3, padding='same'),
+            nn.Conv1d(hidden_channels // 4, hidden_channels // 2, 3, padding='same'),
+            nn.Conv1d(hidden_channels // 2, hidden_channels, 1)
+        )
         
         self.encoder = TransformerEncoder(
             hidden_channels,

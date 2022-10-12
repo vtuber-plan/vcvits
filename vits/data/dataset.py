@@ -10,6 +10,7 @@ import torch
 import torch.utils.data
 from torch import nn
 from torch.nn import functional as F
+import torchaudio
 
 from .. import commons 
 from vits.mel_processing import MAX_WAV_VALUE, mel_spectrogram_torch, spec_to_mel_torch, spectrogram_torch
@@ -286,7 +287,8 @@ class AnyVoiceConversionLoader(torch.utils.data.Dataset):
         self.hparams = hparams
         self.text_cleaners  = hparams.text_cleaners
         self.max_wav_value  = hparams.max_wav_value
-        self.sampling_rate  = hparams.sampling_rate
+        self.source_sampling_rate  = hparams.source_sampling_rate
+        self.target_sampling_rate  = hparams.target_sampling_rate
         self.filter_length  = hparams.filter_length
         self.hop_length     = hparams.hop_length
         self.win_length     = hparams.win_length
@@ -297,13 +299,23 @@ class AnyVoiceConversionLoader(torch.utils.data.Dataset):
         self.min_text_len = getattr(hparams, "min_text_len", 1)
         self.max_text_len = getattr(hparams, "max_text_len", 190)
 
+        self.resamplers = {}
+
         random.seed(1234)
         random.shuffle(self.audiopaths)
 
-    def get_audio(self, filename: str):
+    def get_audio(self, filename: str, sr = None):
         audio, sampling_rate = load_wav_to_torch(filename)
-        if sampling_rate != self.sampling_rate:
-            raise ValueError("{} {} SR doesn't match target {} SR".format(sampling_rate, self.sampling_rate))
+        if sr is not None and sampling_rate != sr:
+            # not match, then resample
+            if sampling_rate in self.resamplers:
+                resampler = self.resamplers[sampling_rate]
+            else:
+                resampler = torchaudio.transforms.Resample(orig_freq=sampling_rate, new_freq=sr)
+                self.resamplers[sampling_rate] = resampler
+            audio = resampler(audio)
+            sampling_rate = sr
+            # raise ValueError("{} {} SR doesn't match target {} SR".format(sampling_rate, self.sampling_rate))
         audio_norm = audio / self.max_wav_value
         audio_norm = audio_norm.unsqueeze(0)
 
@@ -312,8 +324,7 @@ class AnyVoiceConversionLoader(torch.utils.data.Dataset):
         if os.path.exists(spec_filename):
             spec = torch.load(spec_filename)
         else:
-            spec = spectrogram_torch(audio_norm, self.filter_length, self.sampling_rate,
-                    self.hop_length, self.win_length, center=False)
+            spec = spectrogram_torch(audio_norm, self.filter_length, sr, self.hop_length, self.win_length, center=False)
             spec = torch.squeeze(spec, 0)
             torch.save(spec, spec_filename)
         
@@ -322,8 +333,7 @@ class AnyVoiceConversionLoader(torch.utils.data.Dataset):
         if os.path.exists(mel_filename):
             melspec = torch.load(mel_filename)
         else:
-            melspec = spec_to_mel_torch(spec, self.hparams.filter_length, self.hparams.n_mel_channels, 
-                                self.hparams.sampling_rate, self.hparams.mel_fmin, self.hparams.mel_fmax)
+            melspec = spec_to_mel_torch(spec, self.hparams.filter_length, self.hparams.n_mel_channels, sr, self.hparams.mel_fmin, self.hparams.mel_fmax)
             melspec = torch.squeeze(melspec, 0)
             torch.save(melspec, mel_filename)
 
@@ -344,14 +354,18 @@ class AnyVoiceConversionLoader(torch.utils.data.Dataset):
 
     def __getitem__(self, index):
         audiopath = self.audiopaths[index]
-        spec, wav, melspec, pitch_mel = self.get_audio(audiopath)
-        energy = torch.norm(melspec.float(), dim=0, p=2).unsqueeze(0)
+        x_spec, x_wav, x_melspec, x_pitch_mel = self.get_audio(audiopath, self.source_sampling_rate)
+        y_spec, y_wav, y_melspec, y_pitch_mel = self.get_audio(audiopath, self.target_sampling_rate)
         return {
-            "spec": spec,
-            "wav": wav,
-            "melspec": melspec,
-            "pitch": pitch_mel,
-            "energy": energy,
+            "x_spec": x_spec,
+            "x_wav": x_wav,
+            "x_mel": x_melspec,
+            "x_pitch": x_pitch_mel,
+
+            "y_spec": y_spec,
+            "y_wav": y_wav,
+            "y_mel": y_melspec,
+            "y_pitch": y_pitch_mel,
         }
 
     def __len__(self):
