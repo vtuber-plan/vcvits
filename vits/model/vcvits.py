@@ -80,7 +80,6 @@ class VCVITS(pl.LightningModule):
         
         # Generator
         if optimizer_idx == 1:
-            self.generator_out = None
             mel = spec_to_mel_torch(
                 y_spec, 
                 self.hparams.data.filter_length, 

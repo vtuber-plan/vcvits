@@ -285,19 +285,12 @@ class AnyVoiceConversionLoader(torch.utils.data.Dataset):
     def __init__(self, audiopaths: str, hparams):
         self.audiopaths = load_filepaths(audiopaths)
         self.hparams = hparams
-        self.text_cleaners  = hparams.text_cleaners
         self.max_wav_value  = hparams.max_wav_value
         self.source_sampling_rate  = hparams.source_sampling_rate
         self.target_sampling_rate  = hparams.target_sampling_rate
         self.filter_length  = hparams.filter_length
         self.hop_length     = hparams.hop_length
         self.win_length     = hparams.win_length
-
-        self.cleaned_text = getattr(hparams, "cleaned_text", False)
-
-        self.add_blank = hparams.add_blank
-        self.min_text_len = getattr(hparams, "min_text_len", 1)
-        self.max_text_len = getattr(hparams, "max_text_len", 190)
 
         self.resamplers = {}
 
