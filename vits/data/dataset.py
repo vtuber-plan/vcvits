@@ -25,7 +25,7 @@ def normalize_pitch(pitch, mean, std):
     pitch[zeros] = 0.0
     return pitch
 
-def estimate_pitch(audio: np.ndarray, sr: int, mel_len: int, n_fft: int, win_length: int, hop_length: int,
+def estimate_pitch(audio: np.ndarray, sr: int, n_fft: int, win_length: int, hop_length: int,
                     method='pyin', normalize_mean=None, normalize_std=None, n_formants=1):
     if type(normalize_mean) is float or type(normalize_mean) is list:
         normalize_mean = torch.tensor(normalize_mean)
@@ -47,11 +47,11 @@ def estimate_pitch(audio: np.ndarray, sr: int, mel_len: int, n_fft: int, win_len
             hop_length=hop_length,
             center=False,
             pad_mode='reflect')
-        assert np.abs(mel_len - pitch_mel.shape[0]) <= 1.0
+        # assert np.abs(mel_len - pitch_mel.shape[0]) <= 1.0
 
         pitch_mel = np.where(np.isnan(pitch_mel), 0.0, pitch_mel)
         pitch_mel = torch.from_numpy(pitch_mel).unsqueeze(0)
-        pitch_mel = F.pad(pitch_mel, (0, mel_len - pitch_mel.size(1)))
+        # pitch_mel = F.pad(pitch_mel, (0, mel_len - pitch_mel.size(1)))
 
         if n_formants > 1:
             raise NotImplementedError
@@ -66,7 +66,7 @@ def estimate_pitch(audio: np.ndarray, sr: int, mel_len: int, n_fft: int, win_len
 
     return pitch_mel
 
-def coarse_f0(f0: np.ndarray, f0_min: float=50, f0_max: float=1100, f0_bin:int=512):
+def coarse_f0(f0: np.ndarray, f0_min:float=50, f0_max:float=1100, f0_bin:int=512):
     f0_mel_min = 1127 * np.log(1 + f0_min / 700)
     f0_mel_max = 1127 * np.log(1 + f0_max / 700)
     f0_mel = 1127 * np.log(1 + f0 / 700)
@@ -76,10 +76,7 @@ def coarse_f0(f0: np.ndarray, f0_min: float=50, f0_max: float=1100, f0_bin:int=5
     f0_mel[f0_mel <= 1] = 1
     f0_mel[f0_mel > f0_bin - 1] = f0_bin - 1
     f0_coarse = np.rint(f0_mel).astype(np.int)
-    assert f0_coarse.max() <= 255 and f0_coarse.min() >= 1, (
-        f0_coarse.max(),
-        f0_coarse.min(),
-    )
+    assert f0_coarse.max() <= f0_bin and f0_coarse.min() >= 1, (f0_coarse.max(), f0_coarse.min(),)
     return f0_coarse
 
 class TextAudioLoader(torch.utils.data.Dataset):
@@ -352,8 +349,8 @@ class AnyVoiceConversionLoader(torch.utils.data.Dataset):
             pitch_mel = torch.load(pitch_filename)
         else:
             pitch_mel = estimate_pitch(
-                audio=audio.numpy(), sr=sampling_rate, mel_len=melspec.shape[-1], n_fft=self.hparams.filter_length,
-                win_length=self.hparams.win_length, hop_length=self.hparams.hop_length, method='pyin',
+                audio=audio.numpy(), sr=sampling_rate, n_fft=self.hparams.filter_length,
+                win_length=self.hparams.win_length, hop_length=320, method='pyin',
                 normalize_mean=None, normalize_std=None, n_formants=1)
             
             coarse_pitch = torch.tensor(coarse_f0(pitch_mel.numpy()), dtype=torch.long)

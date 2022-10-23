@@ -63,7 +63,7 @@ class HubertContentEncoder(nn.Module):
         for param in self.hubert.parameters():
             param.requires_grad = False
         
-        self.emb_pitch = nn.Embedding(256, hidden_channels)
+        self.emb_pitch = nn.Embedding(512, hidden_channels)
         nn.init.normal_(self.emb_pitch.weight, 0.0, hidden_channels ** -0.5)
         
         self.encoder = TransformerEncoder(
@@ -80,7 +80,7 @@ class HubertContentEncoder(nn.Module):
         x_encoded, _ = self.hubert.encode(wav)
         hubert_out = self.hubert.proj(x_encoded).transpose(1, -1)
         
-        pitch_out = self.emb_pitch(pitch)
+        pitch_out = self.emb_pitch(pitch).transpose(1, -1)
         out = hubert_out + pitch_out
 
         # n_downsample = self.hubert.feature_extractor.downsample_num
