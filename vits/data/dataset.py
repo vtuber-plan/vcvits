@@ -76,7 +76,7 @@ def coarse_f0(f0: np.ndarray, f0_min:float=50, f0_max:float=1100, f0_bin:int=512
     f0_mel[f0_mel <= 1] = 1
     f0_mel[f0_mel > f0_bin - 1] = f0_bin - 1
     f0_coarse = np.rint(f0_mel).astype(np.int)
-    assert f0_coarse.max() <= f0_bin and f0_coarse.min() >= 1, (f0_coarse.max(), f0_coarse.min(),)
+    assert f0_coarse.max() < f0_bin and f0_coarse.min() >= 1, (f0_coarse.max(), f0_coarse.min(),)
     return f0_coarse
 
 class TextAudioLoader(torch.utils.data.Dataset):
@@ -354,7 +354,8 @@ class AnyVoiceConversionLoader(torch.utils.data.Dataset):
                 normalize_mean=None, normalize_std=None, n_formants=1)
             
             coarse_pitch = torch.tensor(coarse_f0(pitch_mel.numpy()), dtype=torch.long)
-            torch.save(coarse_pitch, pitch_filename)
+            pitch_mel = coarse_pitch
+            torch.save(pitch_mel, pitch_filename)
 
         return spec, audio_norm, melspec, pitch_mel
 
