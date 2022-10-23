@@ -86,7 +86,7 @@ class HubertContentEncoder(nn.Module):
         # n_downsample = self.hubert.feature_extractor.downsample_num
         x_mask = torch.unsqueeze(commons.sequence_mask((x_lengths/320).int(), out.size(2)), 1).to(x.dtype)
    
-        x_out = self.encoder(hubert_out * x_mask, x_mask)
+        x_out = self.encoder(out * x_mask, x_mask)
 
         stats = self.proj(x_out) * x_mask
 
