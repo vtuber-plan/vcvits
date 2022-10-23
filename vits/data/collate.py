@@ -179,12 +179,12 @@ class AnyVoiceConversionCollate():
         x_spec_padded = torch.zeros(len(batch), batch[0]["x_spec"].size(0), max_x_spec_len, dtype=torch.float32)
         x_wav_padded = torch.zeros(len(batch), 1, max_x_wav_len, dtype=torch.float32)
         x_mel_padded = torch.zeros(len(batch), batch[0]["x_mel"].size(0), max_x_mel_len, dtype=torch.float32)
-        x_pitch_padded = torch.zeros(len(batch), 1, max_x_pitch_len, dtype=torch.float32)
+        x_pitch_padded = torch.zeros(len(batch), max_x_pitch_len, dtype=torch.long)
 
         y_spec_padded = torch.zeros(len(batch), batch[0]["x_spec"].size(0), max_y_spec_len, dtype=torch.float32)
         y_wav_padded = torch.zeros(len(batch), 1, max_y_wav_len, dtype=torch.float32)
         y_mel_padded = torch.zeros(len(batch), batch[0]["x_mel"].size(0), max_y_mel_len, dtype=torch.float32)
-        y_pitch_padded = torch.zeros(len(batch), 1, max_y_pitch_len, dtype=torch.float32)
+        y_pitch_padded = torch.zeros(len(batch), max_y_pitch_len, dtype=torch.long)
 
         for i in range(len(ids_sorted_decreasing)):
             row = batch[ids_sorted_decreasing[i]]
@@ -202,7 +202,7 @@ class AnyVoiceConversionCollate():
             x_mel_lengths[i] = mel.size(1)
 
             pitch = row["x_pitch"]
-            x_pitch_padded[i, :, :pitch.size(1)] = pitch
+            x_pitch_padded[i, :pitch.size(1)] = pitch
             x_pitch_lengths[i] = pitch.size(1)
 
             spec = row["y_spec"]
@@ -218,7 +218,7 @@ class AnyVoiceConversionCollate():
             y_mel_lengths[i] = mel.size(1)
 
             pitch = row["y_pitch"]
-            y_pitch_padded[i, :, :pitch.size(1)] = pitch
+            y_pitch_padded[i, :pitch.size(1)] = pitch
             y_pitch_lengths[i] = pitch.size(1)
 
 

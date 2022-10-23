@@ -62,11 +62,9 @@ class HubertContentEncoder(nn.Module):
         self.hubert = torch.hub.load("bshall/hubert:main", "hubert_soft")
         for param in self.hubert.parameters():
             param.requires_grad = False
-        self.pitch_proj = nn.Sequential(
-            nn.Conv1d(1, hidden_channels // 4, 3, padding='same'),
-            nn.Conv1d(hidden_channels // 4, hidden_channels // 2, 3, padding='same'),
-            nn.Conv1d(hidden_channels // 2, hidden_channels, 1)
-        )
+        
+        self.emb_pitch = nn.Embedding(256, hidden_channels)
+        nn.init.normal_(self.emb_pitch.weight, 0.0, hidden_channels ** -0.5)
         
         self.encoder = TransformerEncoder(
             hidden_channels,
@@ -81,10 +79,9 @@ class HubertContentEncoder(nn.Module):
         wav = F.pad(x, ((400 - 320) // 2, (400 - 320) // 2))
         x_encoded, _ = self.hubert.encode(wav)
         hubert_out = self.hubert.proj(x_encoded).transpose(1, -1)
-
-        # interpolated_pitch = torch.nn.functional.interpolate(pitch, scale_factor=(512/960), mode='nearest')
-        interpolated_pitch = torch.nn.functional.interpolate(pitch, size=(hubert_out.shape[2]), mode='nearest')
-        hubert_out = hubert_out + self.pitch_proj(interpolated_pitch)
+        
+        pitch_out = self.emb_pitch(pitch)
+        out = hubert_out + pitch_out
 
         # n_downsample = self.hubert.feature_extractor.downsample_num
         x_mask = torch.unsqueeze(commons.sequence_mask((x_lengths/320).int(), hubert_out.size(2)), 1).to(x.dtype)
