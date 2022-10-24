@@ -66,16 +66,16 @@ def estimate_pitch(audio: np.ndarray, sr: int, n_fft: int, win_length: int, hop_
 
     return pitch_mel
 
-def coarse_f0(f0: np.ndarray, f0_min:float=50, f0_max:float=1100, f0_bin:int=512):
+def coarse_f0(f0: torch.FloatTensor, f0_min:float=50, f0_max:float=1100, f0_bin:int=512):
     f0_mel_min = 1127 * np.log(1 + f0_min / 700)
     f0_mel_max = 1127 * np.log(1 + f0_max / 700)
-    f0_mel = 1127 * np.log(1 + f0 / 700)
+    f0_mel = 1127 * torch.log(1 + f0 / 700)
     f0_mel[f0_mel > 0] = (f0_mel[f0_mel > 0] - f0_mel_min) * (f0_bin - 2) / (f0_mel_max - f0_mel_min) + 1
 
     # use 0 or 1
     f0_mel[f0_mel <= 1] = 1
     f0_mel[f0_mel > f0_bin - 1] = f0_bin - 1
-    f0_coarse = np.rint(f0_mel).astype(np.int)
+    f0_coarse = torch.round(f0_mel)
     assert f0_coarse.max() < f0_bin and f0_coarse.min() >= 1, (f0_coarse.max(), f0_coarse.min(),)
     return f0_coarse
 
@@ -326,7 +326,7 @@ class AnyVoiceConversionLoader(torch.utils.data.Dataset):
         audio_norm = audio_norm.unsqueeze(0)
 
         # load spec
-        spec_filename = filename.replace(".wav", ".spec.pt")
+        spec_filename = filename.replace(".wav", f"_{sr}.spec.pt")
         if os.path.exists(spec_filename):
             spec = torch.load(spec_filename)
         else:
@@ -335,7 +335,7 @@ class AnyVoiceConversionLoader(torch.utils.data.Dataset):
             torch.save(spec, spec_filename)
         
         # load mel
-        mel_filename = filename.replace(".wav", ".mel.pt")
+        mel_filename = filename.replace(".wav", f"_{sr}.mel.pt")
         if os.path.exists(mel_filename):
             melspec = torch.load(mel_filename)
         else:
@@ -344,7 +344,7 @@ class AnyVoiceConversionLoader(torch.utils.data.Dataset):
             torch.save(melspec, mel_filename)
 
         # load pitch
-        pitch_filename = filename.replace(".wav", ".pitch.pt")
+        pitch_filename = filename.replace(".wav", f"_{sr}.pitch.pt")
         if os.path.exists(pitch_filename):
             pitch_mel = torch.load(pitch_filename)
         else:
@@ -353,7 +353,7 @@ class AnyVoiceConversionLoader(torch.utils.data.Dataset):
                 win_length=self.hparams.win_length, hop_length=320, method='pyin',
                 normalize_mean=None, normalize_std=None, n_formants=1)
             
-            coarse_pitch = torch.tensor(coarse_f0(pitch_mel.numpy()), dtype=torch.long)
+            coarse_pitch = coarse_f0(pitch_mel)
             pitch_mel = coarse_pitch
             torch.save(pitch_mel, pitch_filename)
 

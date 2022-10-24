@@ -2,7 +2,7 @@
   "trainer": {
     "max_epochs": 20000,
     "limit_val_batches": 1,
-    "accumulate_grad_batches": 4,
+    "accumulate_grad_batches": 2,
     "default_root_dir": "./logs"
   },
   "train": {
@@ -20,10 +20,8 @@
     "init_lr_ratio": 1,
     "warmup_epochs": 0,
     "c_mel": 45,
-    "c_kl": 1.0,
-    "c_dur": 1.0,
-    "c_p_fm": 1,
-    "c_s_fm": 1
+    "c_kl": 1,
+    "c_dur": 1
   },
   "data": {
     "training_files": "filelists/vcvits/paimoon/paimoon_audio_train_filelist.txt",

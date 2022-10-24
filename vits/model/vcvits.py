@@ -47,13 +47,14 @@ class VCVITS(pl.LightningModule):
         # Discriminator
         if optimizer_idx == 0:
             # MPD
-            y_d_hat_r, y_d_hat_g, _, _ = self.net_period_d(y, y_hat.detach())
-            loss_disc_p, losses_disc_p_r, losses_disc_p_g = discriminator_loss(y_d_hat_r, y_d_hat_g)
+            y_dp_hat_r, y_dp_hat_g, _, _ = self.net_period_d(y, y_hat.detach())
+            loss_disc_p, losses_disc_p_r, losses_disc_p_g = discriminator_loss(y_dp_hat_r, y_dp_hat_g)
 
             # MSD
             y_ds_hat_r, y_ds_hat_g, _, _ = self.net_scale_d(y, y_hat.detach())
             loss_disc_s, losses_disc_s_r, losses_disc_s_g = discriminator_loss(y_ds_hat_r, y_ds_hat_g)
-            loss_disc_all = loss_disc_p + loss_disc_s
+
+            loss_disc_all = (loss_disc_p + loss_disc_s) / 2
 
             grad_norm_p_d = commons.clip_grad_value_(self.net_period_d.parameters(), None)
             grad_norm_s_d = commons.clip_grad_value_(self.net_scale_d.parameters(), None)
@@ -100,11 +101,11 @@ class VCVITS(pl.LightningModule):
             )
 
             y_dp_hat_r, y_dp_hat_g, fmap_p_r, fmap_p_g = self.net_period_d(y, y_hat)
-            loss_p_fm = feature_loss(fmap_p_r, fmap_p_g) * self.hparams.train.c_p_fm
+            loss_p_fm = feature_loss(fmap_p_r, fmap_p_g)
             loss_p_gen, losses_p_gen = generator_loss(y_dp_hat_g)
 
             y_ds_hat_r, y_ds_hat_g, fmap_s_r, fmap_s_g = self.net_scale_d(y, y_hat)
-            loss_s_fm = feature_loss(fmap_s_r, fmap_s_g) * self.hparams.train.c_s_fm
+            loss_s_fm = feature_loss(fmap_s_r, fmap_s_g)
             loss_s_gen, losses_s_gen = generator_loss(y_ds_hat_g)
 
             # kl
@@ -114,7 +115,7 @@ class VCVITS(pl.LightningModule):
             # mel
             loss_mel = F.l1_loss(y_mel, y_hat_mel) * self.hparams.train.c_mel
 
-            loss_gen_all = (loss_s_gen + loss_s_fm) + (loss_p_gen + loss_p_fm) + loss_kl + loss_dur + loss_mel
+            loss_gen_all = ((loss_s_gen + loss_s_fm) + (loss_p_gen + loss_p_fm)) / 2 + loss_kl + loss_dur + loss_mel
 
             grad_norm_g = commons.clip_grad_value_(self.net_g.parameters(), None)
 
@@ -124,12 +125,14 @@ class VCVITS(pl.LightningModule):
             scalar_dict.update({
                 "loss/g/p_fm": loss_p_fm,
                 "loss/g/s_fm": loss_s_fm,
+                "loss/g/p_gen": loss_p_gen,
+                "loss/g/s_gen": loss_s_gen,
                 "loss/g/mel": loss_mel,
                 "loss/g/kl": loss_kl,
             })
 
-            scalar_dict.update({"loss/g/p_gen_{}".format(i): v for i, v in enumerate(losses_p_gen)})
-            scalar_dict.update({"loss/g/s_gen_{}".format(i): v for i, v in enumerate(losses_s_gen)})
+            # scalar_dict.update({"loss/g/p_gen_{}".format(i): v for i, v in enumerate(losses_p_gen)})
+            # scalar_dict.update({"loss/g/s_gen_{}".format(i): v for i, v in enumerate(losses_s_gen)})
 
             image_dict = { 
                 "slice/mel_org": utils.plot_spectrogram_to_numpy(y_mel[0].data.cpu().numpy()),
@@ -197,8 +200,7 @@ class VCVITS(pl.LightningModule):
             global_step=self.global_step, 
             images=image_dict,
             audios=audio_dict,
-            audio_sampling_rate=self.hparams.data.target_sampling_rate
-            )
+            audio_sampling_rate=self.hparams.data.target_sampling_rate)
 
 
     def configure_optimizers(self):
