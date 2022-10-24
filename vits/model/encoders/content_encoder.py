@@ -7,8 +7,7 @@ import torch
 
 from vits.model.transformer.relative_attention_transformer import TransformerEncoder
 
-from ..natsubert.natsubert import NatsuBert
-from ..hubert.hubert import Hubert
+import fairseq
 from ... import commons
 
 class NatsuBertContentEncoder(nn.Module):
@@ -45,21 +44,23 @@ class NatsuBertContentEncoder(nn.Module):
 
 class HubertContentEncoder(nn.Module):
     def __init__(self,
-                 out_channels,
-                 hidden_channels,
-                 filter_channels,
-                 n_heads,
-                 n_layers,
-                 kernel_size,
-                 p_dropout,
-                 n_fft=2048,
-                 hop_size=512):
+                hubert_ckpt: str,
+                out_channels,
+                hidden_channels,
+                filter_channels,
+                n_heads,
+                n_layers,
+                kernel_size,
+                p_dropout,
+                n_fft=2048,
+                hop_size=512):
         super().__init__()
         self.n_fft = n_fft
         self.hop_size = hop_size
         self.out_channels = out_channels
         
-        self.hubert = torch.hub.load("bshall/hubert:main", "hubert_soft")
+        models, cfg, task = fairseq.checkpoint_utils.load_model_ensemble_and_task([hubert_ckpt])
+        self.hubert = models[0]
         for param in self.hubert.parameters():
             param.requires_grad = False
         
@@ -77,8 +78,8 @@ class HubertContentEncoder(nn.Module):
 
     def forward(self, x, x_lengths, pitch, pitch_lengths):
         wav = F.pad(x, ((400 - 320) // 2, (400 - 320) // 2))
-        x_encoded, _ = self.hubert.encode(wav)
-        hubert_out = self.hubert.proj(x_encoded).transpose(1, -1)
+        x_encoded, _ = self.hubert.extract_features(wav.squeeze(1))
+        hubert_out = x_encoded.transpose(1, -1)
         
         pitch_out = self.emb_pitch(pitch).transpose(1, -1)
         out = hubert_out + pitch_out
