@@ -396,7 +396,7 @@ class PreloadAnyVoiceConversionLoader(torch.utils.data.Dataset):
         random.seed(1234)
         random.shuffle(self.audiopaths)
 
-    def get_audio(self, filename: str, sr = None):
+    def get_audio(self, filename: str, sr = None, load_features: bool = False):
         audio, sampling_rate = load_wav_to_torch(filename)
         if sr is not None and sampling_rate != sr:
             # not match, then resample
@@ -448,14 +448,17 @@ class PreloadAnyVoiceConversionLoader(torch.utils.data.Dataset):
         if os.path.exists(feature_filename):
             hubert_features = torch.load(feature_filename)
         else:
-            raise Exception("Please preprocess the dataset before training")
+            if load_features:
+                raise Exception("Please preprocess the dataset before training")
+            else:
+                hubert_features = torch.zeros(self.hparams.hubert_channels, 1)
 
         return spec, audio_norm, melspec, pitch_mel, hubert_features
 
     def __getitem__(self, index):
         audiopath = self.audiopaths[index]
-        x_spec, x_wav, x_melspec, x_pitch_mel, x_hubert_features = self.get_audio(audiopath, self.source_sampling_rate)
-        y_spec, y_wav, y_melspec, y_pitch_mel, y_hubert_features = self.get_audio(audiopath, self.target_sampling_rate)
+        x_spec, x_wav, x_melspec, x_pitch_mel, x_hubert_features = self.get_audio(audiopath, self.source_sampling_rate, load_features=True)
+        y_spec, y_wav, y_melspec, y_pitch_mel, y_hubert_features = self.get_audio(audiopath, self.target_sampling_rate, load_features=False)
         return {
             "x_spec": x_spec,
             "x_wav": x_wav,

@@ -72,6 +72,7 @@ class PreloadHubertContentEncoder(nn.Module):
                 n_layers,
                 kernel_size,
                 p_dropout,
+                hubert_channels,
                 n_fft=2048,
                 hop_size=512):
         super().__init__()
@@ -79,6 +80,7 @@ class PreloadHubertContentEncoder(nn.Module):
         self.hop_size = hop_size
         self.out_channels = out_channels
         
+        self.hubert_proj = nn.Linear(hubert_channels, hidden_channels)
         self.emb_pitch = nn.Embedding(512, hidden_channels)
         nn.init.normal_(self.emb_pitch.weight, 0.0, hidden_channels ** -0.5)
         
@@ -92,7 +94,7 @@ class PreloadHubertContentEncoder(nn.Module):
         self.proj = nn.Conv1d(hidden_channels, out_channels * 2, 1)
 
     def forward(self, x, x_lengths, pitch, pitch_lengths):
-        hubert_out = x
+        hubert_out = self.hubert_proj(x.transpose(1, -1)).transpose(1, -1)
         
         pitch_out = self.emb_pitch(pitch).transpose(1, -1)
         out = hubert_out + pitch_out

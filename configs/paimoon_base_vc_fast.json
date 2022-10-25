@@ -2,7 +2,7 @@
   "trainer": {
     "max_epochs": 20000,
     "limit_val_batches": 1,
-    "accumulate_grad_batches": 8,
+    "accumulate_grad_batches": 1,
     "default_root_dir": "./logs"
   },
   "train": {
@@ -13,7 +13,7 @@
     "learning_rate": 2e-4,
     "betas": [0.8, 0.99],
     "eps": 1e-9,
-    "batch_size": 4,
+    "batch_size": 16,
     "fp16_run": true,
     "lr_decay": 0.999875,
     "segment_size": 16384,
@@ -36,11 +36,13 @@
     "mel_fmin": 0.0,
     "mel_fmax": null,
     "n_speakers": 0,
-    "hubert_ckpt": "checkpoints/hubert_xtralarge_ll60k.pt"
+    "hubert_ckpt": "checkpoints/hubert_xtralarge_ll60k.pt",
+    "hubert_channels": 1280
   },
   "model": {
     "inter_channels": 256,
-    "hidden_channels": 1280,
+    "hidden_channels": 512,
+    "hubert_channels": 1280,
     "filter_channels": 768,
     "n_heads": 2,
     "n_layers": 6,

@@ -29,6 +29,7 @@ class PreloadSynthesizerSVC(nn.Module):
                  upsample_rates,
                  upsample_initial_channel,
                  upsample_kernel_sizes,
+                 hubert_channels,
                  n_speakers=0,
                  gin_channels=0,
                  use_sdp=True,
@@ -52,13 +53,14 @@ class PreloadSynthesizerSVC(nn.Module):
         self.segment_size = segment_size
         self.n_speakers = n_speakers
         self.gin_channels = gin_channels
+        self.hubert_channels = hubert_channels
 
         self.use_sdp = use_sdp
 
         self.resampler = torchaudio.transforms.Resample(orig_freq=48000, new_freq=16000)
 
         self.enc_p = PreloadHubertContentEncoder(inter_channels, hidden_channels, filter_channels,
-                                n_heads, n_layers, kernel_size, p_dropout)
+                                n_heads, n_layers, kernel_size, p_dropout, hubert_channels)
         self.dec = Generator(inter_channels,
                              resblock,
                              resblock_kernel_sizes,
