@@ -35,10 +35,10 @@
     "n_mel_channels": 128,
     "mel_fmin": 0.0,
     "mel_fmax": null,
-    "n_speakers": 0
+    "n_speakers": 0,
+    "hubert_ckpt": "checkpoints/hubert_xtralarge_ll60k.pt"
   },
   "model": {
-    "hubert_ckpt": "checkpoints/hubert_xtralarge_ll60k.pt",
     "inter_channels": 256,
     "hidden_channels": 1280,
     "filter_channels": 768,

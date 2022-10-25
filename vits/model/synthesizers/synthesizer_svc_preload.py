@@ -8,7 +8,7 @@ from torch.nn import functional as F
 import vits.commons as commons
 import monotonic_align
 
-from ..encoders.content_encoder import HubertContentEncoder
+from ..encoders.content_encoder import HubertContentEncoder, PreloadHubertContentEncoder
 from ..encoders.posterior_encoder import PosteriorEncoder
 from ..flow import ResidualCouplingBlock
 from ..predictors.duration_predictor import StochasticDurationPredictor, DurationPredictor
@@ -17,7 +17,7 @@ from ..predictors.energy_predictor import EnergyPredictor
 from ..vocoder import Generator
 
 
-class SynthesizerSVC(nn.Module):
+class PreloadSynthesizerSVC(nn.Module):
     def __init__(self, spec_channels, segment_size,
                  inter_channels, hidden_channels, filter_channels,
                  n_heads, n_layers,
@@ -57,7 +57,7 @@ class SynthesizerSVC(nn.Module):
 
         self.resampler = torchaudio.transforms.Resample(orig_freq=48000, new_freq=16000)
 
-        self.enc_p = HubertContentEncoder(kwargs["hubert_ckpt"], inter_channels, hidden_channels, filter_channels,
+        self.enc_p = PreloadHubertContentEncoder(inter_channels, hidden_channels, filter_channels,
                                 n_heads, n_layers, kernel_size, p_dropout)
         self.dec = Generator(inter_channels,
                              resblock,
@@ -76,10 +76,10 @@ class SynthesizerSVC(nn.Module):
         if n_speakers >= 1:
             self.emb_g = nn.Embedding(n_speakers, gin_channels)
 
-    def forward(self, x_wav, x_wav_lengths, x_pitch, x_pitch_lengths, y_spec, y_spec_lengths, sid=None):
+    def forward(self, x_hubert_features, x_hubert_features_lengths, x_pitch, x_pitch_lengths, y_spec, y_spec_lengths, sid=None):
         # x: [batch, text_max_length]
         # text encoding
-        x, m_p, logs_p, x_mask = self.enc_p(x_wav, x_wav_lengths, x_pitch, x_pitch_lengths)
+        x, m_p, logs_p, x_mask = self.enc_p(x_hubert_features, x_hubert_features_lengths, x_pitch, x_pitch_lengths)
 
         # m_p, logs_p, 
         if self.n_speakers >= 1:

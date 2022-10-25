@@ -5,20 +5,22 @@ import argparse
 import itertools
 import math
 import torch
+import torchaudio
 from torch import nn, optim
 from torch.nn import functional as F
 from torch.utils.data import DataLoader
 from torch.nn.parallel import DistributedDataParallel as DDP
+from vits.model.preload_vcvits import PreloadVCVITS
 from vits.model.vcvits import VCVITS
 
 import vits.utils as utils
-from vits.data.collate import AnyVoiceConversionCollate
+from vits.data.collate import AnyVoiceConversionCollate, PreloadAnyVoiceConversionCollate
 
 import pytorch_lightning as pl
 
 from vits.hparams import HParams
 from vits.model.vits import VITS
-from vits.data.dataset import AnyVoiceConversionLoader
+from vits.data.dataset import AnyVoiceConversionLoader, PreloadAnyVoiceConversionLoader
 
 def get_hparams() -> HParams:
     parser = argparse.ArgumentParser()
@@ -38,7 +40,7 @@ def main():
 
     train_dataset = AnyVoiceConversionLoader(hparams.data.training_files, hparams.data)
     valid_dataset = AnyVoiceConversionLoader(hparams.data.validation_files, hparams.data)
-
+    
     collate_fn = AnyVoiceConversionCollate()
     train_loader = DataLoader(train_dataset, batch_size=hparams.train.batch_size, num_workers=16, shuffle=False, pin_memory=True, collate_fn=collate_fn)
     valid_loader = DataLoader(valid_dataset, batch_size=1, num_workers=16, shuffle=False, pin_memory=True, collate_fn=collate_fn)

@@ -10,38 +10,6 @@ from vits.model.transformer.relative_attention_transformer import TransformerEnc
 import fairseq
 from ... import commons
 
-class NatsuBertContentEncoder(nn.Module):
-    def __init__(self,
-                 out_channels,
-                 hidden_channels,
-                 filter_channels,
-                 n_heads,
-                 n_layers,
-                 kernel_size,
-                 p_dropout,
-                 n_fft=2048,
-                 hop_size=512):
-        super().__init__()
-        self.n_fft = n_fft
-        self.hop_size = hop_size
-        self.out_channels = out_channels
-        self.hubert = NatsuBert(out_dim=hidden_channels, extractor_hidden_size=512)
-        self.proj = nn.Conv1d(hidden_channels, out_channels * 2, 1)
-
-    def forward(self, x, x_lengths):
-        wav = F.pad(x, (self.n_fft // 8, self.n_fft // 8))
-        # wav = x
-        x_encoded, _ = self.hubert.encode(wav)
-        x_out = self.hubert.proj(x_encoded).transpose(1, -1)
-
-        # n_downsample = self.hubert.feature_extractor.downsample_num
-        x_mask = torch.unsqueeze(commons.sequence_mask(x_lengths, x_out.size(2)), 1).to(x.dtype)
-   
-        stats = self.proj(x_out) * x_mask
-
-        m, logs = torch.split(stats, self.out_channels, dim=1)
-        return x_out, m, logs, x_mask
-
 class HubertContentEncoder(nn.Module):
     def __init__(self,
                 hubert_ckpt: str,
@@ -86,6 +54,51 @@ class HubertContentEncoder(nn.Module):
 
         # n_downsample = self.hubert.feature_extractor.downsample_num
         x_mask = torch.unsqueeze(commons.sequence_mask((x_lengths/320).int(), out.size(2)), 1).to(x.dtype)
+   
+        x_out = self.encoder(out * x_mask, x_mask)
+
+        stats = self.proj(x_out) * x_mask
+
+        m, logs = torch.split(stats, self.out_channels, dim=1)
+        return x_out, m, logs, x_mask
+
+
+class PreloadHubertContentEncoder(nn.Module):
+    def __init__(self,
+                out_channels,
+                hidden_channels,
+                filter_channels,
+                n_heads,
+                n_layers,
+                kernel_size,
+                p_dropout,
+                n_fft=2048,
+                hop_size=512):
+        super().__init__()
+        self.n_fft = n_fft
+        self.hop_size = hop_size
+        self.out_channels = out_channels
+        
+        self.emb_pitch = nn.Embedding(512, hidden_channels)
+        nn.init.normal_(self.emb_pitch.weight, 0.0, hidden_channels ** -0.5)
+        
+        self.encoder = TransformerEncoder(
+            hidden_channels,
+            filter_channels,
+            n_heads,
+            n_layers,
+            kernel_size,
+            p_dropout)
+        self.proj = nn.Conv1d(hidden_channels, out_channels * 2, 1)
+
+    def forward(self, x, x_lengths, pitch, pitch_lengths):
+        hubert_out = x
+        
+        pitch_out = self.emb_pitch(pitch).transpose(1, -1)
+        out = hubert_out + pitch_out
+
+        # n_downsample = self.hubert.feature_extractor.downsample_num
+        x_mask = torch.unsqueeze(commons.sequence_mask(x_lengths.int(), out.size(2)), 1).to(x.dtype)
    
         x_out = self.encoder(out * x_mask, x_mask)
 

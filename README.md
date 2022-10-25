@@ -20,6 +20,10 @@ python setup.py build_ext --inplace
 ```
 
 
+FairSeq Hubert预训练模型：[下载](https://github.com/facebookresearch/fairseq/blob/main/examples/hubert/README.md)
+
+
+
 ## Training Exmaple
 pass
 

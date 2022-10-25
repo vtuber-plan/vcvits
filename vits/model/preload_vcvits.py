@@ -11,7 +11,7 @@ import pytorch_lightning as pl
 from .discriminators.multi_scale_discriminator import MultiScaleDiscriminator
 from .discriminators.multi_period_discriminator import MultiPeriodDiscriminator
 
-from .synthesizers.synthesizer_svc import SynthesizerSVC
+from .synthesizers.synthesizer_svc_preload import PreloadSynthesizerSVC
 
 from ..text.symbols import symbols
 from ..mel_processing import spec_to_mel_torch, mel_spectrogram_torch
@@ -19,29 +19,30 @@ from .losses import discriminator_loss, kl_loss,feature_loss, generator_loss
 from .. import commons
 from .. import utils
 
-class VCVITS(pl.LightningModule):
+class PreloadVCVITS(pl.LightningModule):
     def __init__(self, **kwargs):
         super().__init__()
         self.save_hyperparameters(*[k for k in kwargs])
 
-        self.net_g = SynthesizerSVC(
+        self.net_g = PreloadSynthesizerSVC(
             self.hparams.data.filter_length // 2 + 1,
             self.hparams.train.segment_size // self.hparams.data.hop_length,
             **self.hparams.model)
         self.net_period_d = MultiPeriodDiscriminator(self.hparams.model.use_spectral_norm)
         self.net_scale_d = MultiScaleDiscriminator(self.hparams.model.use_spectral_norm)
-        # self.net_pitch_d = PitchDiscriminator(self.hparams.model.use_spectral_norm)
 
     def training_step(self, batch: Dict[str, torch.Tensor], batch_idx: int, optimizer_idx: int):
         x_wav, x_wav_lengths = batch["x_wav_values"], batch["x_wav_lengths"]
         x_spec, x_spec_lengths = batch["x_spec_values"], batch["x_spec_lengths"]
         x_mel, x_mel_lengths = batch["x_mel_values"], batch["x_mel_lengths"]
         x_pitch, x_pitch_lengths = batch["x_pitch_values"], batch["x_pitch_lengths"]
+        x_hubert_features, x_hubert_features_lengths = batch["x_hubert_features_values"], batch["x_hubert_features_lengths"]
+        
         y_wav, y_wav_lengths = batch["y_wav_values"], batch["y_wav_lengths"]
         y_spec, y_spec_lengths = batch["y_spec_values"], batch["y_spec_lengths"]
 
         y_hat, l_length, ids_slice, x_mask, z_mask, (z, z_p, m_p, logs_p, m_q, logs_q) = \
-            self.net_g(x_wav, x_wav_lengths, x_pitch, x_pitch_lengths, y_spec, y_spec_lengths)
+            self.net_g(x_hubert_features, x_hubert_features_lengths, x_pitch, x_pitch_lengths, y_spec, y_spec_lengths)
         y = commons.slice_segments(y_wav, ids_slice * self.hparams.data.hop_length, self.hparams.train.segment_size) # slice 
 
         # Discriminator
@@ -155,6 +156,8 @@ class VCVITS(pl.LightningModule):
         x_spec, x_spec_lengths = batch["x_spec_values"], batch["x_spec_lengths"]
         x_mel, x_mel_lengths = batch["x_mel_values"], batch["x_mel_lengths"]
         x_pitch, x_pitch_lengths = batch["x_pitch_values"], batch["x_pitch_lengths"]
+        x_hubert_features, x_hubert_features_lengths = batch["x_hubert_features_values"], batch["x_hubert_features_lengths"]
+
         y_wav, y_wav_lengths = batch["y_wav_values"], batch["y_wav_lengths"]
         y_spec, y_spec_lengths = batch["y_spec_values"], batch["y_spec_lengths"]
 
@@ -164,7 +167,7 @@ class VCVITS(pl.LightningModule):
         y_spec = y_spec[:1]
         y_spec_lengths = y_spec_lengths[:1]
 
-        y_hat, attn, mask, (z, z_p, m_p, logs_p) = self.net_g.infer(x_wav, x_wav_lengths, x_pitch, x_pitch_lengths, max_len=1000)
+        y_hat, attn, mask, (z, z_p, m_p, logs_p) = self.net_g.infer(x_hubert_features, x_hubert_features_lengths, x_pitch, x_pitch_lengths, max_len=1000)
         y_hat_lengths = mask.sum([1,2]).long() * self.hparams.data.hop_length
 
         mel = spec_to_mel_torch(
