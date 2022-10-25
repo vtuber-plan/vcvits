@@ -99,7 +99,7 @@ def main():
 
     trainer_params = {
         "accelerator": "gpu",
-        "devices": [1],
+        "devices": [0],
         # "strategy": "ddp",
     }
 
