@@ -45,8 +45,8 @@ class PreloadVCVITS(pl.LightningModule):
         y_wav, y_wav_lengths = batch["y_wav_values"], batch["y_wav_lengths"]
         y_spec, y_spec_lengths = batch["y_spec_values"], batch["y_spec_lengths"]
 
-        y_hat, l_length, ids_slice, x_mask, z_mask, (z, z_p, m_p, logs_p, m_q, logs_q)\
-            = self.net_g(x_hubert_features, x_hubert_features_lengths, x_pitch, x_pitch_lengths, y_spec, y_spec_lengths, sid=speakers)
+        y_hat, ids_slice, x_mask, z_mask, (z, z_p, m_p, logs_p, m_q, logs_q) = \
+            self.net_g(x_hubert_features, x_hubert_features_lengths, x_pitch, x_pitch_lengths, y_spec, y_spec_lengths, sid=speakers)
         y = commons.slice_segments(y_wav, ids_slice * self.hparams.data.hop_length, self.hparams.train.segment_size) # slice 
 
         # Generator
@@ -80,12 +80,10 @@ class PreloadVCVITS(pl.LightningModule):
 
             # kl
             loss_kl = kl_loss(z_p, logs_q, m_p, logs_p, z_mask) * self.hparams.train.c_kl
-            # dur
-            loss_dur = torch.sum(l_length.float()) * self.hparams.train.c_dur
             # mel
             loss_mel = F.l1_loss(y_mel, y_hat_mel) * self.hparams.train.c_mel
 
-            loss_gen_all = ((loss_s_gen + loss_s_fm) + (loss_p_gen + loss_p_fm)) / 2 + loss_kl + loss_dur + loss_mel
+            loss_gen_all = (loss_s_gen + loss_s_fm) + (loss_p_gen + loss_p_fm) + loss_mel
 
             grad_norm_g = commons.clip_grad_value_(self.net_g.parameters(), None)
 
@@ -98,7 +96,6 @@ class PreloadVCVITS(pl.LightningModule):
                 "loss/g/p_gen": loss_p_gen,
                 "loss/g/s_gen": loss_s_gen,
                 "loss/g/mel": loss_mel,
-                "loss/g/kl": loss_kl,
             })
 
             # scalar_dict.update({"loss/g/p_gen_{}".format(i): v for i, v in enumerate(losses_p_gen)})
@@ -128,7 +125,7 @@ class PreloadVCVITS(pl.LightningModule):
             y_ds_hat_r, y_ds_hat_g, _, _ = self.net_scale_d(y, y_hat.detach())
             loss_disc_s, losses_disc_s_r, losses_disc_s_g = discriminator_loss(y_ds_hat_r, y_ds_hat_g)
 
-            loss_disc_all = (loss_disc_p + loss_disc_s) / 2
+            loss_disc_all = loss_disc_p + loss_disc_s
 
             grad_norm_p_d = commons.clip_grad_value_(self.net_period_d.parameters(), None)
             grad_norm_s_d = commons.clip_grad_value_(self.net_scale_d.parameters(), None)
