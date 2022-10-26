@@ -27,12 +27,13 @@ from vits.text.cleaners.japanese_mapping import ROMAJI_LIST
 import torchaudio
 
 if torch.cuda.is_available():
-    device = "cuda"
+    device = "cuda:1"
 else:
     device = "cpu"
 
 model = PreloadVCVITS.load_from_checkpoint(PATH)
 model.eval()
+model = model.to(device)
 
 hparams = model.hparams
 
@@ -44,6 +45,8 @@ resamplers = {}
 
 def get_audio(hparams, filename: str, sr = None):
     audio, sampling_rate = load_wav_to_torch(filename)
+    if len(audio.shape) > 1:
+        audio = torch.mean(audio, dim=1)
     if sr is not None and sampling_rate != sr:
         # not match, then resample
         if sampling_rate in resamplers:
@@ -102,10 +105,14 @@ def convert(source_audio, target_audio):
 
     x_pitch = x_pitch.long()
     x_pitch_lengths = torch.tensor([x_pitch.shape[1]], dtype=torch.long)
+
+    x_features, x_features_lengths, x_pitch, x_pitch_lengths = x_features.to(device), x_features_lengths.to(device), x_pitch.to(device), x_pitch_lengths.to(device)
     
-    y_hat, attn, mask, *_ = model.net_g.infer(x_features, x_features_lengths, x_pitch, x_pitch_lengths, max_len=10000, length_scale=1)
+    y_hat, attn, mask, *_ = model.net_g.infer(x_features, x_features_lengths, x_pitch, x_pitch_lengths, max_len=10000)
     y_hat_lengths = mask.sum([1,2]).long() * model.hparams.data.hop_length
+
+    y_hat = y_hat.to("cpu")
 
     sf.write(target_audio, y_hat[0,:,:y_hat_lengths[0]].squeeze(0).detach().numpy(), 48000, subtype='PCM_24')
 
-convert("dataset/ChinoCorpus/CN0B4000.wav", 'out.wav')
+convert("toushi.wav", 'out.wav')
