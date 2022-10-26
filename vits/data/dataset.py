@@ -479,7 +479,7 @@ class PreloadAnyVoiceConversionLoader(torch.utils.data.Dataset):
 
 class PreloadAnyVoiceConversionMultiSpeakerLoader(torch.utils.data.Dataset):
     def __init__(self, audiopaths: str, hparams):
-        self.audiopaths = load_filepaths(audiopaths)
+        self.audiopaths = load_filepaths_and_text(audiopaths)
         self.hparams = hparams
         self.max_wav_value  = hparams.max_wav_value
         self.source_sampling_rate  = hparams.source_sampling_rate
@@ -555,7 +555,10 @@ class PreloadAnyVoiceConversionMultiSpeakerLoader(torch.utils.data.Dataset):
     def __getitem__(self, index):
         item = self.audiopaths[index]
         audiopath = item[0]
-        sid = int(item[1])
+        if len(item) == 1:
+            sid = 0
+        else:
+            sid = int(item[1])
         x_spec, x_wav, x_melspec, x_pitch_mel, x_hubert_features = self.get_audio(audiopath, self.source_sampling_rate, load_features=True)
         y_spec, y_wav, y_melspec, y_pitch_mel, y_hubert_features = self.get_audio(audiopath, self.target_sampling_rate, load_features=False)
         return {

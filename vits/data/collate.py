@@ -474,6 +474,8 @@ class PreloadAnyVoiceConversionMultiSpeakerCollate():
 
 
         ret = {
+            "sid": sid,
+            
             "x_spec_values": x_spec_padded,
             "x_spec_lengths": x_spec_lengths,
             "x_wav_values": x_wav_padded,
