@@ -6,7 +6,6 @@ from torch import nn
 from torch.nn import functional as F
 
 import vits.commons as commons
-import monotonic_align
 
 from ..encoders.content_encoder import HubertContentEncoder, PreloadHubertContentEncoder
 from ..encoders.posterior_encoder import PosteriorEncoder

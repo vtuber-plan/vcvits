@@ -8,7 +8,6 @@ import vits.commons as commons
 import vits.model.modules as modules
 from vits.model.predictors.modules import average_pitch
 from .. import transformer
-import monotonic_align
 
 from torch.nn import Conv1d, ConvTranspose1d, AvgPool1d, Conv2d
 from torch.nn.utils import weight_norm, remove_weight_norm, spectral_norm
