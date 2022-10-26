@@ -35,15 +35,20 @@ def get_hparams() -> HParams:
     hparams = HParams(**config)
     return hparams
 
+def load_hubert(path: str, device: str):
+    models, cfg, task = fairseq.checkpoint_utils.load_model_ensemble_and_task([path])
+    hubert = models[0].to(device)
+    hubert.eval()
+    return hubert
+
 def preprocess(hparams, files, sr=16000):
     # load hubert
     if torch.cuda.is_available():
         device = "cuda"
     else:
         device = "cpu"
-    models, cfg, task = fairseq.checkpoint_utils.load_model_ensemble_and_task([hparams.data.hubert_ckpt])
-    hubert = models[0].to(device)
-    hubert.eval()
+    
+    hubert = None
 
     audiopaths = utils.load_filepaths(files)
 
@@ -72,6 +77,9 @@ def preprocess(hparams, files, sr=16000):
 
             wav = F.pad(audio_norm, ((400 - 320) // 2, (400 - 320) // 2))
             wav_input = wav.squeeze(1).to(device)
+
+            if hubert is None:
+                hubert = load_hubert(hparams.data.hubert_ckpt, device)
 
             hubert_features, _ = hubert.extract_features(wav_input)
             hubert_features = hubert_features.transpose(1, -1).squeeze(0)

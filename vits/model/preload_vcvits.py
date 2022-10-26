@@ -170,8 +170,12 @@ class PreloadVCVITS(pl.LightningModule):
         x_spec_lengths = x_spec_lengths[:1]
         y_spec = y_spec[:1]
         y_spec_lengths = y_spec_lengths[:1]
-
-        y_hat, attn, mask, (z, z_p, m_p, logs_p) = self.net_g.infer(x_hubert_features, x_hubert_features_lengths, x_pitch, x_pitch_lengths, sid=speakers, max_len=1000)
+        
+        len_scale = (self.hparams.data.target_sampling_rate / self.hparams.data.hubert_downsample) \
+                    / (self.hparams.data.source_sampling_rate / self.hparams.data.hop_length)
+        y_hat, mask, (z, z_p, m_p, logs_p) = self.net_g.infer(
+            x_hubert_features, x_hubert_features_lengths, x_pitch, x_pitch_lengths,
+            sid=speakers, length_scale=len_scale, max_len=1000)
         y_hat_lengths = mask.sum([1,2]).long() * self.hparams.data.hop_length
 
         mel = spec_to_mel_torch(
