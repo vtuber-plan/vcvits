@@ -11,7 +11,7 @@ from vits.data.dataset import coarse_f0, estimate_pitch
 from vits.hparams import HParams
 from vits.model.preload_vcvits import PreloadVCVITS
 
-files = glob.glob("logs/lightning_logs/version_0/checkpoints/*.ckpt")
+files = glob.glob("logs/lightning_logs/version_1/checkpoints/*.ckpt")
 PATH = sorted(list(files))[-1]
 
 from vits.model.vcvits import VCVITS
@@ -27,7 +27,7 @@ from vits.text.cleaners.japanese_mapping import ROMAJI_LIST
 import torchaudio
 
 if torch.cuda.is_available():
-    device = "cuda:1"
+    device = "cuda"
 else:
     device = "cpu"
 
@@ -89,7 +89,7 @@ def get_audio(hparams, filename: str, sr = None):
     return spec, audio_norm, melspec, pitch_mel, hubert_features
 
 def convert(source_audio, target_audio):
-    with open("configs/paimoon_base_vc.json", "r") as f:
+    with open("configs/paimoon_base_vc_ms_fast.json", "r") as f:
         data = f.read()
     config = json.loads(data)
     
@@ -108,11 +108,16 @@ def convert(source_audio, target_audio):
 
     x_features, x_features_lengths, x_pitch, x_pitch_lengths = x_features.to(device), x_features_lengths.to(device), x_pitch.to(device), x_pitch_lengths.to(device)
     
-    y_hat, attn, mask, *_ = model.net_g.infer(x_features, x_features_lengths, x_pitch, x_pitch_lengths, max_len=10000)
+    len_scale = (hparams.data.target_sampling_rate / hparams.data.hop_length) \
+                    / (hparams.data.source_sampling_rate / hparams.data.hubert_downsample)
+    sid = torch.tensor([0], dtype=torch.long).to(device)
+    y_hat, mask, (z, z_p, m_p, logs_p) = model.net_g.infer(
+            x_features, x_features_lengths, x_pitch, x_pitch_lengths,
+            sid=sid, length_scale=len_scale, max_len=1000)
     y_hat_lengths = mask.sum([1,2]).long() * model.hparams.data.hop_length
 
     y_hat = y_hat.to("cpu")
 
     sf.write(target_audio, y_hat[0,:,:y_hat_lengths[0]].squeeze(0).detach().numpy(), 48000, subtype='PCM_24')
 
-convert("toushi.wav", 'out.wav')
+convert("dataset/LJSpeech/LJ001-0019.wav", 'out.wav')

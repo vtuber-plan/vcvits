@@ -83,8 +83,8 @@ class PreloadSynthesizerSVC(nn.Module):
         z, m_q, logs_q, y_mask = self.enc_q(y_spec, y_spec_lengths, g=g)
         z_p = self.flow(z, y_mask, g=g)
 
-        m_p = F.interpolate(m_p, size=(y_spec.shape[2],))
-        logs_p = F.interpolate(logs_p, size=(y_spec.shape[2],))
+        m_p = F.interpolate(m_p, size=(y_spec.shape[2],), mode="linear")
+        logs_p = F.interpolate(logs_p, size=(y_spec.shape[2],), mode="linear")
 
         z_slice, ids_slice = commons.rand_slice_segments(z, y_spec_lengths, self.segment_size)
         o = self.dec(z_slice, g=g)
@@ -101,8 +101,8 @@ class PreloadSynthesizerSVC(nn.Module):
         y_mask = torch.unsqueeze(commons.sequence_mask(y_lengths, None), 1).to(x_mask.dtype)
 
         y_max_len = torch.max(y_lengths).item()
-        m_p = F.interpolate(m_p, size=(y_max_len,))
-        logs_p = F.interpolate(logs_p, size=(y_max_len,))
+        m_p = F.interpolate(m_p, size=(y_max_len,), mode="linear")
+        logs_p = F.interpolate(logs_p, size=(y_max_len,), mode="linear")
 
         z_p = m_p + torch.randn_like(m_p) * torch.exp(logs_p) * noise_scale
         z = self.flow(z_p, y_mask, g=g, reverse=True)

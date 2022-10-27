@@ -83,7 +83,7 @@ class PreloadVCVITS(pl.LightningModule):
             # mel
             loss_mel = F.l1_loss(y_mel, y_hat_mel) * self.hparams.train.c_mel
 
-            loss_gen_all = (loss_s_gen + loss_s_fm) + (loss_p_gen + loss_p_fm) + loss_mel
+            loss_gen_all = (loss_s_gen + loss_s_fm) + (loss_p_gen + loss_p_fm) + loss_mel + loss_kl
 
             grad_norm_g = commons.clip_grad_value_(self.net_g.parameters(), None)
 
@@ -149,7 +149,6 @@ class PreloadVCVITS(pl.LightningModule):
                 scalars=scalar_dict)
 
             return loss_disc_all
-        
 
     def validation_step(self, batch, batch_idx):
         self.net_g.eval()
