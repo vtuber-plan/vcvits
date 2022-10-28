@@ -2,6 +2,7 @@ import argparse
 import glob
 import os
 import tqdm
+import soundfile as sf
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
@@ -14,7 +15,6 @@ if __name__ == "__main__":
     speaker_folders = sorted(speaker_folders)
     print(f"Speaker Number: {len(speaker_folders)}")
 
-
     with open(args.output, "w", encoding="utf-8") as f:
         for sid, speaker_name in enumerate(tqdm.tqdm(speaker_folders)):
             speaker_folder = os.path.join(args.input, speaker_name)
@@ -22,6 +22,9 @@ if __name__ == "__main__":
             speaker_files = sorted(speaker_files)
 
             for file in speaker_files:
+                audio = sf.SoundFile(file)
+                if audio.frames / audio.samplerate < 3:
+                    continue
                 file.replace("\\", "/")
                 f.write(f"{file}|{sid}\n")
     

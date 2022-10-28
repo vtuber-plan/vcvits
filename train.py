@@ -25,7 +25,7 @@ from vits.data.dataset import PreloadAnyVoiceConversionMultiSpeakerLoader
 
 def get_hparams() -> HParams:
     parser = argparse.ArgumentParser()
-    parser.add_argument('-c', '--config', type=str, default="./configs/paimoon_base_vc_ms_fast.json", help='JSON file for configuration')
+    parser.add_argument('-c', '--config', type=str, default="./configs/base.json", help='JSON file for configuration')
     args = parser.parse_args()
 
     with open(args.config, "r") as f:
@@ -50,7 +50,8 @@ def preprocess(hparams, files, sr=16000):
     
     hubert = None
 
-    audiopaths = utils.load_filepaths(files)
+    audiopaths = utils.load_filepaths_and_text(files)
+    audiopaths = [item[0] for item in audiopaths]
 
     resamplers = {}
 

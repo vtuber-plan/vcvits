@@ -9,6 +9,7 @@ from typing import List, Tuple
 import numpy as np
 import scipy
 import torch
+import soundfile
 from .hparams import HParams
 
 MATPLOTLIB_FLAG = False
@@ -133,7 +134,10 @@ def plot_alignment_to_numpy(alignment, info=None):
 
 
 def load_wav_to_torch(full_path: str) -> Tuple[torch.FloatTensor, int]:
-    sampling_rate, data = scipy.io.wavfile.read(full_path)
+    # sampling_rate, data = scipy.io.wavfile.read(full_path)
+    data, sampling_rate = soundfile.read(full_path, dtype="int16")
+    if len(data.shape) >= 2:
+        data = np.mean(data, axis=1)
     return torch.FloatTensor(data.astype(np.float32)), sampling_rate
 
 

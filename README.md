@@ -1,6 +1,5 @@
 # VCVITS: VITS-based Voice conversion Model
-
-
+This is a repository for a voice conversion model based on [VITS](https://github.com/jaywalnut310/vits).
 
 ## Pre-requisites
 0. Python >= 3.8
