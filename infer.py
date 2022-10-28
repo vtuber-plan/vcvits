@@ -11,7 +11,7 @@ from vits.data.dataset import coarse_f0, estimate_pitch
 from vits.hparams import HParams
 from vits.model.preload_vcvits import PreloadVCVITS
 
-files = glob.glob("logs/lightning_logs/version_1/checkpoints/*.ckpt")
+files = glob.glob("logs/lightning_logs/version_0/checkpoints/*.ckpt")
 PATH = sorted(list(files))[-1]
 
 from vits.model.vcvits import VCVITS
@@ -20,14 +20,10 @@ from vits.utils import load_wav_to_torch, plot_spectrogram_to_numpy
 from vits import commons 
 from vits.mel_processing import spectrogram_torch
 from vits.utils import load_wav_to_torch, load_filepaths_and_text
-from vits.text import text_to_sequence, cleaned_text_to_sequence
-from vits.text.cleaners import japanese_cleaners
-from vits.text.cleaners import chinese_cleaners
-from vits.text.cleaners.japanese_mapping import ROMAJI_LIST
 import torchaudio
 
 if torch.cuda.is_available():
-    device = "cuda"
+    device = "cuda:2"
 else:
     device = "cpu"
 
@@ -120,4 +116,4 @@ def convert(source_audio, target_audio):
 
     sf.write(target_audio, y_hat[0,:,:y_hat_lengths[0]].squeeze(0).detach().numpy(), 48000, subtype='PCM_24')
 
-convert("dataset/LJSpeech/LJ001-0019.wav", 'out.wav')
+convert("dataset/LJSpeech/LJ001-0001.wav", 'out.wav')
