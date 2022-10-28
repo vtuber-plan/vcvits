@@ -1,0 +1,10 @@
+./dataset/example/LJSpeech/LJ014-0068.wav|0
+./dataset/example/SSB0341/SSB03410324.wav|37
+./dataset/example/SSB0629/SSB06290421.wav|76
+./dataset/example/SSB0261/SSB02610320.wav|24
+./dataset/example/SSB0502/SSB05020096.wav|57
+./dataset/example/p329/p329_274.wav|266
+./dataset/example/p360/p360_283.wav|279
+./dataset/example/p240/p240_099.wav|191
+./dataset/example/LJSpeech/LJ015-0052.wav|0
+./dataset/example/LJSpeech/LJ030-0088.wav|0

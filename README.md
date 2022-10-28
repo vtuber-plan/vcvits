@@ -14,7 +14,17 @@
 
 
 ## Training
-pass
+
+### File List Generation
+First generate the file list text file from the dataset folder.
+One folder for audio files of each speaker in the dataset folder.
+Run `filelist.py` to get `filelist.txt`
+
+Then split the training and validation dataset, run `split.py`.
+
+
+
+### Config Settings
 
 
 ## Inference

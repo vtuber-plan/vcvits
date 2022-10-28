@@ -1,4 +1,0 @@
-dataset/ChinoCorpus/CNZFL001.wav
-dataset/ChinoCorpus/CNZFL002.wav
-dataset/ChinoCorpus/CNZFL003.wav
-dataset/ChinoCorpus/CNE42007.wav
