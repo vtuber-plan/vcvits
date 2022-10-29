@@ -4,8 +4,8 @@ import os
 import random
 import numpy as np
 import librosa
-from librosa import pyin
-# from natsupitch.core import pyin
+# from librosa import pyin
+from natsupitch.core import pyin
 import torch
 import torch.utils.data
 from torch import nn

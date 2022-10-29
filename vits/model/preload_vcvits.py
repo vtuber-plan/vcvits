@@ -32,8 +32,6 @@ class PreloadVCVITS(pl.LightningModule):
         self.net_period_d = MultiPeriodDiscriminator(self.hparams.model.use_spectral_norm)
         self.net_scale_d = MultiScaleDiscriminator(self.hparams.model.use_spectral_norm)
 
-        self.gen_ret = None
-
     def training_step(self, batch: Dict[str, torch.Tensor], batch_idx: int, optimizer_idx: int):
         speakers = batch.get("sid", None)
         x_wav, x_wav_lengths = batch["x_wav_values"], batch["x_wav_lengths"]
