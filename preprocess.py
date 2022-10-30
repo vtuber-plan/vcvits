@@ -87,7 +87,7 @@ def preprocess(hparams, files, sr=16000, load_features: bool = False):
 
     print("Preprocessing dataset...")
     with torch.inference_mode():
-        Parallel(n_jobs=16, backend="loky")\
+        Parallel(n_jobs=32, backend="loky")\
             (delayed(preprocess_single)(hparams, filename, sr, False, device) \
                 for filename in tqdm.tqdm(audiopaths))
     
