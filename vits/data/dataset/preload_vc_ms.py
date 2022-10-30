@@ -60,7 +60,7 @@ class PreloadAnyVoiceConversionMultiSpeakerLoader(torch.utils.data.Dataset):
             mel_fmin = self.hparams.mel_fmin,
             mel_fmax = self.hparams.mel_fmax,
             hubert_channels = self.hparams.hubert_channels,
-            sr=self.target_sampling_rate, load_features=True)
+            sr=self.target_sampling_rate, load_features=False)
         return {
             "sid": sid,
 
