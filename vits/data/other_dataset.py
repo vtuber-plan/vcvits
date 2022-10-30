@@ -18,6 +18,7 @@ from vits.mel_processing import MAX_WAV_VALUE, mel_spectrogram_torch, spec_to_me
 from vits.utils import load_filepaths, load_wav_to_torch, load_filepaths_and_text
 from ..text import text_to_sequence, cleaned_text_to_sequence
 from ..utils import load_wav_to_torch
+from .audio import get_audio
 
 def normalize_pitch(pitch, mean, std):
     zeros = (pitch == 0.0)
@@ -475,106 +476,3 @@ class PreloadAnyVoiceConversionLoader(torch.utils.data.Dataset):
     def __len__(self):
         return len(self.audiopaths)
 
-
-class PreloadAnyVoiceConversionMultiSpeakerLoader(torch.utils.data.Dataset):
-    def __init__(self, audiopaths: str, hparams):
-        self.audiopaths = load_filepaths_and_text(audiopaths)
-        self.hparams = hparams
-        self.max_wav_value  = hparams.max_wav_value
-        self.source_sampling_rate  = hparams.source_sampling_rate
-        self.target_sampling_rate  = hparams.target_sampling_rate
-        self.filter_length  = hparams.filter_length
-        self.hop_length     = hparams.hop_length
-        self.win_length     = hparams.win_length
-
-        self.resamplers = {}
-
-        random.seed(1234)
-        random.shuffle(self.audiopaths)
-
-    def get_audio(self, filename: str, sr = None, load_features: bool = False):
-        audio, sampling_rate = load_wav_to_torch(filename)
-        if sr is not None and sampling_rate != sr:
-            # not match, then resample
-            if sampling_rate in self.resamplers:
-                resampler = self.resamplers[sampling_rate]
-            else:
-                resampler = torchaudio.transforms.Resample(orig_freq=sampling_rate, new_freq=sr)
-                self.resamplers[sampling_rate] = resampler
-            audio = resampler(audio)
-            sampling_rate = sr
-            # raise ValueError("{} {} SR doesn't match target {} SR".format(sampling_rate, self.sampling_rate))
-        audio_norm = audio / self.max_wav_value
-        audio_norm = audio_norm.unsqueeze(0)
-
-        # load spec
-        spec_filename = filename.replace(".wav", f"_{sr}.spec.pt")
-        if os.path.exists(spec_filename):
-            spec = torch.load(spec_filename)
-        else:
-            spec = spectrogram_torch(audio_norm, self.filter_length, sr, self.hop_length, self.win_length, center=False)
-            spec = torch.squeeze(spec, 0)
-            torch.save(spec, spec_filename)
-        
-        # load mel
-        mel_filename = filename.replace(".wav", f"_{sr}.mel.pt")
-        if os.path.exists(mel_filename):
-            melspec = torch.load(mel_filename)
-        else:
-            melspec = spec_to_mel_torch(spec, self.hparams.filter_length, self.hparams.n_mel_channels, sr, self.hparams.mel_fmin, self.hparams.mel_fmax)
-            melspec = torch.squeeze(melspec, 0)
-            torch.save(melspec, mel_filename)
-
-        # load pitch
-        pitch_filename = filename.replace(".wav", f"_{sr}.pitch.pt")
-        if os.path.exists(pitch_filename):
-            pitch_mel = torch.load(pitch_filename)
-        else:
-            pitch_mel = estimate_pitch(
-                audio=audio.numpy(), sr=sampling_rate, n_fft=self.hparams.filter_length,
-                win_length=self.hparams.win_length, hop_length=320, method='pyin',
-                normalize_mean=None, normalize_std=None, n_formants=1)
-            
-            coarse_pitch = coarse_f0(pitch_mel)
-            pitch_mel = coarse_pitch
-            torch.save(pitch_mel, pitch_filename)
-        
-        # load features
-        feature_filename = filename.replace(".wav", f"_{sr}.feature.pt")
-        if os.path.exists(feature_filename):
-            hubert_features = torch.load(feature_filename)
-        else:
-            if load_features:
-                raise Exception("Please preprocess the dataset before training")
-            else:
-                hubert_features = torch.zeros(self.hparams.hubert_channels, 1)
-
-        return spec, audio_norm, melspec, pitch_mel, hubert_features
-
-    def __getitem__(self, index):
-        item = self.audiopaths[index]
-        audiopath = item[0]
-        if len(item) == 1:
-            sid = 0
-        else:
-            sid = int(item[1])
-        x_spec, x_wav, x_melspec, x_pitch_mel, x_hubert_features = self.get_audio(audiopath, self.source_sampling_rate, load_features=True)
-        y_spec, y_wav, y_melspec, y_pitch_mel, y_hubert_features = self.get_audio(audiopath, self.target_sampling_rate, load_features=False)
-        return {
-            "sid": sid,
-
-            "x_spec": x_spec,
-            "x_wav": x_wav,
-            "x_mel": x_melspec,
-            "x_pitch": x_pitch_mel,
-            "x_hubert_features": x_hubert_features,
-
-            "y_spec": y_spec,
-            "y_wav": y_wav,
-            "y_mel": y_melspec,
-            "y_pitch": y_pitch_mel,
-            "y_hubert_features": y_hubert_features,
-        }
-
-    def __len__(self):
-        return len(self.audiopaths)

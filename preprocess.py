@@ -6,7 +6,7 @@ import tqdm
 from torch import nn, optim
 from torch.nn import functional as F
 from torch.utils.data import DataLoader
-from vits.data.dataset import coarse_f0, estimate_pitch
+from vits.data.audio import coarse_f0, estimate_pitch
 from vits.mel_processing import spec_to_mel_torch, spectrogram_torch
 
 import vits.utils as utils
@@ -39,8 +39,8 @@ def preprocess(hparams, files, sr=16000, load_features: bool = False):
             audio, sampling_rate = utils.load_wav_to_torch(filename)
             if sr is not None and sampling_rate != sr:
                 # not match, then resample
-                if sampling_rate in resamplers:
-                    resampler = resamplers[sampling_rate]
+                if sr in resamplers:
+                    resampler = resamplers[sr]
                 else:
                     resampler = torchaudio.transforms.Resample(orig_freq=sampling_rate, new_freq=sr)
                     resamplers[sampling_rate] = resampler
@@ -51,21 +51,21 @@ def preprocess(hparams, files, sr=16000, load_features: bool = False):
             audio_norm = audio_norm.unsqueeze(0)
 
             # load spec
-            spec_filename = filename.replace(".wav", f"_{sr}.spec.pt")
+            spec_filename = filename.replace(".wav", f"_{sampling_rate}.spec.pt")
             if not os.path.exists(spec_filename):
                 spec = spectrogram_torch(audio_norm, hparams.data.filter_length, sr, hparams.data.hop_length, hparams.data.win_length, center=False)
                 spec = torch.squeeze(spec, 0)
                 torch.save(spec, spec_filename)
             
             # load mel
-            mel_filename = filename.replace(".wav", f"_{sr}.mel.pt")
+            mel_filename = filename.replace(".wav", f"_{sampling_rate}.mel.pt")
             if not os.path.exists(mel_filename):
                 melspec = spec_to_mel_torch(spec, hparams.data.filter_length, hparams.data.n_mel_channels, sr, hparams.data.mel_fmin, hparams.data.mel_fmax)
                 melspec = torch.squeeze(melspec, 0)
                 torch.save(melspec, mel_filename)
 
             # load pitch
-            pitch_filename = filename.replace(".wav", f"_{sr}.pitch.pt")
+            pitch_filename = filename.replace(".wav", f"_{sampling_rate}.pitch.pt")
             if not os.path.exists(pitch_filename):
                 pitch_mel = estimate_pitch(
                     audio=audio.numpy(), sr=sampling_rate, n_fft=hparams.data.filter_length,
@@ -77,7 +77,7 @@ def preprocess(hparams, files, sr=16000, load_features: bool = False):
                 torch.save(pitch_mel, pitch_filename)
 
             # features
-            feature_filename = filename.replace(".wav", f"_{sr}.feature.pt")
+            feature_filename = filename.replace(".wav", f"_{sampling_rate}.feature.pt")
             if not os.path.exists(feature_filename) and load_features:
                 wav = F.pad(audio_norm, ((400 - 320) // 2, (400 - 320) // 2))
                 wav_input = wav.squeeze(1).to(device)

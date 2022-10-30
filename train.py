@@ -17,7 +17,7 @@ from vits.data.collate import PreloadAnyVoiceConversionMultiSpeakerCollate
 import pytorch_lightning as pl
 
 from vits.hparams import HParams
-from vits.data.dataset import PreloadAnyVoiceConversionMultiSpeakerLoader
+from vits.data.dataset.preload_vc_ms import PreloadAnyVoiceConversionMultiSpeakerLoader
 
 def get_hparams() -> HParams:
     parser = argparse.ArgumentParser()
@@ -44,7 +44,7 @@ def main():
     preprocess(hparams, hparams.data.validation_files, hparams.data.target_sampling_rate)
     
     collate_fn = PreloadAnyVoiceConversionMultiSpeakerCollate()
-    train_loader = DataLoader(train_dataset, batch_size=hparams.train.batch_size, num_workers=16, shuffle=True, pin_memory=True, collate_fn=collate_fn)
+    train_loader = DataLoader(train_dataset, batch_size=hparams.train.batch_size, num_workers=1, shuffle=False, pin_memory=True, collate_fn=collate_fn)
     valid_loader = DataLoader(valid_dataset, batch_size=1, num_workers=16, shuffle=False, pin_memory=True, collate_fn=collate_fn)
 
     model = PreloadVCVITS(**hparams)
