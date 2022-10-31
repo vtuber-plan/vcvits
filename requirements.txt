@@ -9,6 +9,7 @@ pytorch-lightning==1.7.5
 
 pypinyin==0.47.1
 fairseq==0.12.2
+tensorboardX==2.5.1
 
 torch==1.13.0
 torchvision==0.14.0

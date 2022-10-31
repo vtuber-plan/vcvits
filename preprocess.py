@@ -83,7 +83,7 @@ def preprocess(hparams, files, sr=16000, load_features: bool = False):
     audiopaths = utils.load_filepaths_and_text(files)
     audiopaths = [item[0] for item in audiopaths]
 
-    audiopaths = sorted(audiopaths)
+    audiopaths = sorted(audiopaths, reverse=True)
 
     print("Preprocessing dataset...")
     with torch.inference_mode():
