@@ -98,10 +98,10 @@ def get_audio(filename: str,
     if sr is not None and sampling_rate != sr:
         # not match, then resample
         if sr in resamplers:
-            resampler = resamplers[sr]
+            resampler = resamplers[(sampling_rate, sr)]
         else:
             resampler = torchaudio.transforms.Resample(orig_freq=sampling_rate, new_freq=sr)
-            resamplers[sampling_rate] = resampler
+            resamplers[(sampling_rate, sr)] = resampler
         audio = resampler(audio)
         sampling_rate = sr
         # raise ValueError("{} {} SR doesn't match target {} SR".format(sampling_rate, self.sampling_rate))

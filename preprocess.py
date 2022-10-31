@@ -86,11 +86,11 @@ def preprocess(hparams, files, sr=16000, load_features: bool = False):
     audiopaths = sorted(audiopaths, reverse=True)
 
     print("Preprocessing dataset...")
-    with torch.inference_mode():
-        Parallel(n_jobs=32, backend="loky")\
-            (delayed(preprocess_single)(hparams, filename, sr, False, device) \
-                for filename in tqdm.tqdm(audiopaths))
+    Parallel(n_jobs=32, backend="loky")\
+        (delayed(preprocess_single)(hparams, filename, sr, False, device) \
+            for filename in tqdm.tqdm(audiopaths))
     
     if load_features:
-        for filename in tqdm.tqdm(audiopaths):
-            preprocess_single(hparams, filename, sr, load_features, device)
+        with torch.inference_mode():
+            for filename in tqdm.tqdm(audiopaths):
+                preprocess_single(hparams, filename, sr, load_features, device)
