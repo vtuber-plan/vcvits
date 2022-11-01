@@ -1,21 +1,15 @@
-import math
-import time
+
 import os
-import random
 from typing import Optional
 import numpy as np
 import librosa
 from librosa import pyin
-# from natsupitch.core import pyin
 import torch
 import torch.utils.data
 from torch import nn
 from torch.nn import functional as F
 import torchaudio
 
-import fairseq
-
-from .. import commons 
 from vits.mel_processing import MAX_WAV_VALUE, mel_spectrogram_torch, spec_to_mel_torch, spectrogram_torch
 from vits.utils import load_filepaths, load_wav_to_torch, load_filepaths_and_text
 from ..utils import load_wav_to_torch

@@ -7,7 +7,7 @@ import soundfile as sf
 import glob
 import os
 import fairseq
-from vits.data.dataset import coarse_f0, estimate_pitch
+from vits.data.audio import coarse_f0, estimate_pitch
 from vits.hparams import HParams
 from vits.model.preload_vcvits import PreloadVCVITS
 
@@ -23,7 +23,7 @@ from vits.utils import load_wav_to_torch, load_filepaths_and_text
 import torchaudio
 
 if torch.cuda.is_available():
-    device = "cuda:2"
+    device = "cuda"
 else:
     device = "cpu"
 
@@ -85,7 +85,7 @@ def get_audio(hparams, filename: str, sr = None):
     return spec, audio_norm, melspec, pitch_mel, hubert_features
 
 def convert(source_audio, target_audio):
-    with open("configs/paimoon_base_vc_ms_fast.json", "r") as f:
+    with open("configs/base.json", "r") as f:
         data = f.read()
     config = json.loads(data)
     
@@ -106,7 +106,7 @@ def convert(source_audio, target_audio):
     
     len_scale = (hparams.data.target_sampling_rate / hparams.data.hop_length) \
                     / (hparams.data.source_sampling_rate / hparams.data.hubert_downsample)
-    sid = torch.tensor([0], dtype=torch.long).to(device)
+    sid = torch.tensor([175], dtype=torch.long).to(device)
     y_hat, mask, (z, z_p, m_p, logs_p) = model.net_g.infer(
             x_features, x_features_lengths, x_pitch, x_pitch_lengths,
             sid=sid, length_scale=len_scale, max_len=1000)
@@ -116,4 +116,4 @@ def convert(source_audio, target_audio):
 
     sf.write(target_audio, y_hat[0,:,:y_hat_lengths[0]].squeeze(0).detach().numpy(), 48000, subtype='PCM_24')
 
-convert("dataset/LJSpeech/LJ001-0001.wav", 'out.wav')
+convert("dataset/example/paimoon/External14_2.wav", 'out.wav')

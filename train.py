@@ -15,6 +15,7 @@ import vits.utils as utils
 from vits.data.collate import PreloadAnyVoiceConversionMultiSpeakerCollate
 
 import pytorch_lightning as pl
+from pytorch_lightning.callbacks import ModelCheckpoint
 
 from vits.hparams import HParams
 from vits.data.dataset.preload_vc_ms import PreloadAnyVoiceConversionMultiSpeakerLoader
@@ -44,15 +45,18 @@ def main():
     preprocess(hparams, hparams.data.validation_files, hparams.data.target_sampling_rate)
     
     collate_fn = PreloadAnyVoiceConversionMultiSpeakerCollate()
-    train_loader = DataLoader(train_dataset, batch_size=hparams.train.batch_size, num_workers=32, shuffle=False, pin_memory=True, collate_fn=collate_fn)
+    train_loader = DataLoader(train_dataset, batch_size=hparams.train.batch_size, num_workers=16, shuffle=False, pin_memory=True, collate_fn=collate_fn)
     valid_loader = DataLoader(valid_dataset, batch_size=1, num_workers=16, shuffle=False, pin_memory=True, collate_fn=collate_fn)
 
     model = PreloadVCVITS(**hparams)
 
+    checkpoint_callback = ModelCheckpoint(dirpath=None, save_last=True, every_n_train_steps=500)
+
     trainer_params = {
         "accelerator": "gpu",
-        "devices": [2, 3],
+        "devices": [0, 1, 2, 3],
         "strategy": "ddp",
+        "callbacks": [checkpoint_callback],
     }
 
     trainer_params.update(hparams.trainer)
