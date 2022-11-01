@@ -1,5 +1,6 @@
 import os
 import json
+import glob
 import argparse
 import torch
 import torchaudio
@@ -54,8 +55,8 @@ def main():
 
     trainer_params = {
         "accelerator": "gpu",
-        "devices": [0, 1, 2, 3],
-        "strategy": "ddp",
+        "devices": [3],
+        # "strategy": "ddp",
         "callbacks": [checkpoint_callback],
     }
 
@@ -66,7 +67,13 @@ def main():
         trainer_params["precision"] = 16
     
     trainer = pl.Trainer(**trainer_params)
-    trainer.fit(model=model, train_dataloaders=train_loader, val_dataloaders=valid_loader)
+    # recover training
+    ckpt_path = None
+    if os.path.exists("logs/lightning_logs"):
+        versions = glob.glob("logs/lightning_logs/version_*")
+        last_ver = sorted(list(versions))[-1]
+        ckpt_path = os.path.join(last_ver, "checkpoints/last.ckpt")
+    trainer.fit(model=model, train_dataloaders=train_loader, val_dataloaders=valid_loader, ckpt_path=ckpt_path)
 
 if __name__ == "__main__":
   main()

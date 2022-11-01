@@ -46,10 +46,10 @@ def get_audio(hparams, filename: str, sr = None):
     if sr is not None and sampling_rate != sr:
         # not match, then resample
         if sampling_rate in resamplers:
-            resampler = resamplers[sampling_rate]
+            resampler = resamplers[(sampling_rate, sr)]
         else:
             resampler = torchaudio.transforms.Resample(orig_freq=sampling_rate, new_freq=sr)
-            resamplers[sampling_rate] = resampler
+            resamplers[(sampling_rate, sr)] = resampler
         audio = resampler(audio)
         sampling_rate = sr
         # raise ValueError("{} {} SR doesn't match target {} SR".format(sampling_rate, self.sampling_rate))
@@ -116,4 +116,4 @@ def convert(source_audio, target_audio):
 
     sf.write(target_audio, y_hat[0,:,:y_hat_lengths[0]].squeeze(0).detach().numpy(), 48000, subtype='PCM_24')
 
-convert("dataset/example/paimoon/External14_2.wav", 'out.wav')
+convert("dataset/example/p260/p260_001.wav", 'out.wav')
