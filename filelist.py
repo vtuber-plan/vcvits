@@ -15,8 +15,17 @@ if __name__ == "__main__":
     speaker_folders = sorted(speaker_folders)
     print(f"Speaker Number: {len(speaker_folders)}")
 
+
+    speakers = []
+    for sid, speaker_name in enumerate(tqdm.tqdm(speaker_folders)):
+        speaker_folder = os.path.join(args.input, speaker_name)
+        speaker_files = list(glob.glob(os.path.join(speaker_folder, "*.wav")))
+        speaker_files = sorted(speaker_files)
+        if len(speaker_files) > 50:
+            speakers.append(speaker_name)
+
     with open(args.output, "w", encoding="utf-8") as f:
-        for sid, speaker_name in enumerate(tqdm.tqdm(speaker_folders)):
+        for sid, speaker_name in enumerate(tqdm.tqdm(speakers)):
             speaker_folder = os.path.join(args.input, speaker_name)
             speaker_files = list(glob.glob(os.path.join(speaker_folder, "*.wav")))
             speaker_files = sorted(speaker_files)
@@ -29,5 +38,5 @@ if __name__ == "__main__":
                 f.write(f"{file}|{sid}\n")
     
     with open(args.speakers_info, "w", encoding="utf-8") as f:
-        for s in speaker_folders:
+        for s in speakers:
             f.write(f"{s}\n")

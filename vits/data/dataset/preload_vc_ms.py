@@ -49,6 +49,7 @@ class PreloadAnyVoiceConversionMultiSpeakerLoader(torch.utils.data.Dataset):
             mel_fmin = self.hparams.mel_fmin,
             mel_fmax = self.hparams.mel_fmax,
             hubert_channels = self.hparams.hubert_channels,
+            num_pitch = self.hparams.num_pitch,
             sr=self.source_sampling_rate, load_features=True)
         y_spec, y_wav, y_melspec, y_pitch_mel, y_hubert_features = get_audio(
             audiopath,
@@ -60,6 +61,7 @@ class PreloadAnyVoiceConversionMultiSpeakerLoader(torch.utils.data.Dataset):
             mel_fmin = self.hparams.mel_fmin,
             mel_fmax = self.hparams.mel_fmax,
             hubert_channels = self.hparams.hubert_channels,
+            num_pitch = self.hparams.num_pitch,
             sr=self.target_sampling_rate, load_features=False)
         return {
             "sid": sid,

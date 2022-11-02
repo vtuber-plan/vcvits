@@ -1,10 +1,10 @@
-./dataset/example/LJSpeech/LJ050-0039.wav|0
-./dataset/example/SSB0288/SSB02880045.wav|28
-./dataset/example/p255/p255_114.wav|205
-./dataset/example/p360/p360_208.wav|279
-./dataset/example/p266/p266_159.wav|216
-./dataset/example/p376/p376_161.wav|285
-./dataset/example/SSB1625/SSB16250050.wav|153
+./dataset/example/p313/p313_162.wav|228
+./dataset/example/p244/p244_162.wav|164
+./dataset/example/p317/p317_093.wav|232
+./dataset/example/p343/p343_021.wav|245
+./dataset/example/SSB1625/SSB16250075.wav|129
 ./dataset/example/LJSpeech/LJ008-0212.wav|0
 ./dataset/example/LJSpeech/LJ015-0185.wav|0
 ./dataset/example/LJSpeech/LJ009-0123.wav|0
+./dataset/example/SSB0609/SSB06090451.wav|73
+./dataset/example/SSB1684/SSB16840322.wav|132

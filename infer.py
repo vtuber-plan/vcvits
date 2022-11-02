@@ -106,7 +106,7 @@ def convert(source_audio, target_audio):
     
     len_scale = (hparams.data.target_sampling_rate / hparams.data.hop_length) \
                     / (hparams.data.source_sampling_rate / hparams.data.hubert_downsample)
-    sid = torch.tensor([175], dtype=torch.long).to(device)
+    sid = torch.tensor([286], dtype=torch.long).to(device)
     y_hat, mask, (z, z_p, m_p, logs_p) = model.net_g.infer(
             x_features, x_features_lengths, x_pitch, x_pitch_lengths,
             sid=sid, length_scale=len_scale, max_len=1000)
@@ -114,6 +114,6 @@ def convert(source_audio, target_audio):
 
     y_hat = y_hat.to("cpu")
 
-    sf.write(target_audio, y_hat[0,:,:y_hat_lengths[0]].squeeze(0).detach().numpy(), 48000, subtype='PCM_24')
+    sf.write(target_audio, y_hat[0,:,:y_hat_lengths[0]].squeeze(0).detach().numpy(), hparams.data.target_sampling_rate, subtype='PCM_24')
 
-convert("dataset/example/p260/p260_001.wav", 'out.wav')
+convert("External0_337.wav", 'out.wav')

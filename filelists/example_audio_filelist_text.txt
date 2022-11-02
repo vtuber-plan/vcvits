@@ -1,10 +1,10 @@
-./dataset/example/SSB0609/SSB06090451.wav|73
-./dataset/example/SSB1684/SSB16840293.wav|157
 ./dataset/example/SSB0011/SSB00110228.wav|3
 ./dataset/example/LJSpeech/LJ046-0013.wav|0
+./dataset/example/rize/RZB02022.wav|257
+./dataset/example/paimoon/1015_308.wav|256
 ./dataset/example/LJSpeech/LJ017-0006.wav|0
-./dataset/example/p316/p316_373.wav|261
+./dataset/example/p298/p298_273.wav|214
 ./dataset/example/LJSpeech/LJ049-0173.wav|0
 ./dataset/example/LJSpeech/LJ004-0161.wav|0
 ./dataset/example/SSB0080/SSB00800434.wav|12
-./dataset/example/p243/p243_009.wav|193
+./dataset/example/maolei/3414.wav|146

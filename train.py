@@ -40,10 +40,10 @@ def main():
     train_dataset = PreloadAnyVoiceConversionMultiSpeakerLoader(hparams.data.training_files, hparams.data)
     valid_dataset = PreloadAnyVoiceConversionMultiSpeakerLoader(hparams.data.validation_files, hparams.data)
 
-    preprocess(hparams, hparams.data.training_files, hparams.data.source_sampling_rate, load_features=True)
-    preprocess(hparams, hparams.data.training_files, hparams.data.target_sampling_rate)
-    preprocess(hparams, hparams.data.validation_files, hparams.data.source_sampling_rate, load_features=True)
-    preprocess(hparams, hparams.data.validation_files, hparams.data.target_sampling_rate)
+    # preprocess(hparams, hparams.data.training_files, hparams.data.source_sampling_rate, load_features=True)
+    # preprocess(hparams, hparams.data.training_files, hparams.data.target_sampling_rate)
+    # preprocess(hparams, hparams.data.validation_files, hparams.data.source_sampling_rate, load_features=True)
+    # preprocess(hparams, hparams.data.validation_files, hparams.data.target_sampling_rate)
     
     collate_fn = PreloadAnyVoiceConversionMultiSpeakerCollate()
     train_loader = DataLoader(train_dataset, batch_size=hparams.train.batch_size, num_workers=16, shuffle=False, pin_memory=True, collate_fn=collate_fn)
@@ -55,8 +55,8 @@ def main():
 
     trainer_params = {
         "accelerator": "gpu",
-        "devices": [3],
-        # "strategy": "ddp",
+        "devices": [0, 1, 2, 3],
+        "strategy": "ddp",
         "callbacks": [checkpoint_callback],
     }
 
@@ -71,8 +71,11 @@ def main():
     ckpt_path = None
     if os.path.exists("logs/lightning_logs"):
         versions = glob.glob("logs/lightning_logs/version_*")
-        last_ver = sorted(list(versions))[-1]
-        ckpt_path = os.path.join(last_ver, "checkpoints/last.ckpt")
+        if len(list(versions)) > 0:
+            last_ver = sorted(list(versions))[-1]
+            last_ckpt = os.path.join(last_ver, "checkpoints/last.ckpt")
+            if os.path.exists(last_ckpt):
+                ckpt_path = last_ckpt
     trainer.fit(model=model, train_dataloaders=train_loader, val_dataloaders=valid_loader, ckpt_path=ckpt_path)
 
 if __name__ == "__main__":

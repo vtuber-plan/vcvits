@@ -122,10 +122,8 @@ class WN(torch.nn.Module):
         self.drop = nn.Dropout(p_dropout)
 
         if gin_channels != 0:
-            cond_layer = torch.nn.Conv1d(
-                gin_channels, 2*hidden_channels*n_layers, 1)
-            self.cond_layer = torch.nn.utils.weight_norm(
-                cond_layer, name='weight')
+            cond_layer = torch.nn.Conv1d(gin_channels, 2*hidden_channels*n_layers, 1)
+            self.cond_layer = torch.nn.utils.weight_norm(cond_layer, name='weight')
 
         for i in range(n_layers):
             dilation = dilation_rate ** i

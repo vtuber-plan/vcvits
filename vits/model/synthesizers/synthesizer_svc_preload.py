@@ -29,6 +29,7 @@ class PreloadSynthesizerSVC(nn.Module):
                  upsample_initial_channel,
                  upsample_kernel_sizes,
                  hubert_channels,
+                 num_pitch,
                  n_speakers=0,
                  gin_channels=0,
                  **kwargs):
@@ -52,9 +53,10 @@ class PreloadSynthesizerSVC(nn.Module):
         self.n_speakers = n_speakers
         self.gin_channels = gin_channels
         self.hubert_channels = hubert_channels
+        self.num_pitch = num_pitch
 
         self.enc_p = PreloadHubertContentEncoder(inter_channels, hidden_channels, filter_channels,
-                                n_heads, n_layers, kernel_size, p_dropout, hubert_channels)
+                                n_heads, n_layers, kernel_size, p_dropout, hubert_channels, num_pitch)
         self.dec = Generator(inter_channels,
                              resblock,
                              resblock_kernel_sizes,
@@ -71,7 +73,6 @@ class PreloadSynthesizerSVC(nn.Module):
 
     def forward(self, x_hubert_features, x_hubert_features_lengths, x_pitch, x_pitch_lengths, y_spec, y_spec_lengths, sid=None):
         # x: [batch, text_max_length]
-        # text encoding
         x, m_p, logs_p, x_mask = self.enc_p(x_hubert_features, x_hubert_features_lengths, x_pitch, x_pitch_lengths)
 
         # m_p, logs_p, 
