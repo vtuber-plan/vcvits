@@ -43,7 +43,7 @@ def main():
     train_dataset = PreloadAnyVoiceConversionMultiSpeakerDataset(hparams.data.training_files, hparams.data)
     valid_dataset = PreloadAnyVoiceConversionMultiSpeakerDataset(hparams.data.validation_files, hparams.data)
 
-    if "skip-preprocess" not in args:
+    if "skip-preprocess" in args and vars(args)["skip-preprocess"]:
         preprocess(hparams, hparams.data.training_files, hparams.data.source_sampling_rate, load_features=True)
         preprocess(hparams, hparams.data.training_files, hparams.data.target_sampling_rate)
         preprocess(hparams, hparams.data.validation_files, hparams.data.source_sampling_rate, load_features=True)
