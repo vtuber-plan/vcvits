@@ -39,10 +39,14 @@ hubert.eval()
 
 resamplers = {}
 
-def get_audio(hparams, filename: str, sr = None):
+def get_audio(hparams, filename: str, sr = None, pitch_shift: int = 0):
     audio, sampling_rate = load_wav_to_torch(filename)
     if len(audio.shape) > 1:
         audio = torch.mean(audio, dim=1)
+    
+    if pitch_shift != 0:
+        audio = torchaudio.functional.pitch_shift(audio, sampling_rate, pitch_shift)
+    
     if sr is not None and sampling_rate != sr:
         # not match, then resample
         if sampling_rate in resamplers:
@@ -84,14 +88,14 @@ def get_audio(hparams, filename: str, sr = None):
 
     return spec, audio_norm, melspec, pitch_mel, hubert_features
 
-def convert(source_audio, target_audio):
+def convert(source_audio: str, target_audio: str, speaker_id: int, pitch_shift: int):
     with open("configs/base.json", "r") as f:
         data = f.read()
     config = json.loads(data)
     
     hparams = HParams(**config)
 
-    x_spec, x_wav, x_melspec, x_pitch, x_features = get_audio(hparams.data, source_audio, sr=16000)
+    x_spec, x_wav, x_melspec, x_pitch, x_features = get_audio(hparams.data, source_audio, sr=16000, pitch_shift=pitch_shift)
 
     x_wav = x_wav.unsqueeze(0)
     x_wav_lengths = torch.tensor([x_wav.shape[2]], dtype=torch.long)
@@ -106,7 +110,7 @@ def convert(source_audio, target_audio):
     
     len_scale = (hparams.data.target_sampling_rate / hparams.data.hop_length) \
                     / (hparams.data.source_sampling_rate / hparams.data.hubert_downsample)
-    sid = torch.tensor([286], dtype=torch.long).to(device)
+    sid = torch.tensor([speaker_id], dtype=torch.long).to(device)
     y_hat, mask, (z, z_p, m_p, logs_p) = model.net_g.infer(
             x_features, x_features_lengths, x_pitch, x_pitch_lengths,
             sid=sid, length_scale=len_scale, max_len=1000)
@@ -116,4 +120,4 @@ def convert(source_audio, target_audio):
 
     sf.write(target_audio, y_hat[0,:,:y_hat_lengths[0]].squeeze(0).detach().numpy(), hparams.data.target_sampling_rate, subtype='PCM_24')
 
-convert("External0_337.wav", 'out.wav')
+convert("External0_337.wav", 'out.wav', 143, 4)

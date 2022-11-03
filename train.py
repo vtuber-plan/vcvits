@@ -9,7 +9,7 @@ import tqdm
 from torch import nn, optim
 from torch.nn import functional as F
 from torch.utils.data import DataLoader
-from preprocess import preprocess
+from vits.preprocess import preprocess
 from vits.model.preload_vcvits import PreloadVCVITS
 
 import vits.utils as utils
@@ -21,12 +21,8 @@ from pytorch_lightning.callbacks import ModelCheckpoint
 from vits.hparams import HParams
 from vits.data.dataset.preload_vc_ms import PreloadAnyVoiceConversionMultiSpeakerLoader
 
-def get_hparams() -> HParams:
-    parser = argparse.ArgumentParser()
-    parser.add_argument('-c', '--config', type=str, default="./configs/base.json", help='JSON file for configuration')
-    args = parser.parse_args()
-
-    with open(args.config, "r") as f:
+def get_hparams(config_path: str) -> HParams:
+    with open(config_path, "r") as f:
         data = f.read()
     config = json.loads(data)
     
@@ -34,31 +30,41 @@ def get_hparams() -> HParams:
     return hparams
 
 def main():
-    hparams = get_hparams()
+    parser = argparse.ArgumentParser()
+    parser.add_argument('-c', '--config', type=str, default="./configs/base.json", help='JSON file for configuration')
+    parser.add_argument('-a', '--accelerator', type=str, default="gpu", help='training device')
+    parser.add_argument('-d', '--device', type=str, default="0", help='training device ids')
+    args = parser.parse_args()
+
+    hparams = get_hparams(args.config)
     pl.utilities.seed.seed_everything(hparams.train.seed)
 
     train_dataset = PreloadAnyVoiceConversionMultiSpeakerLoader(hparams.data.training_files, hparams.data)
     valid_dataset = PreloadAnyVoiceConversionMultiSpeakerLoader(hparams.data.validation_files, hparams.data)
 
-    # preprocess(hparams, hparams.data.training_files, hparams.data.source_sampling_rate, load_features=True)
-    # preprocess(hparams, hparams.data.training_files, hparams.data.target_sampling_rate)
-    # preprocess(hparams, hparams.data.validation_files, hparams.data.source_sampling_rate, load_features=True)
-    # preprocess(hparams, hparams.data.validation_files, hparams.data.target_sampling_rate)
+    preprocess(hparams, hparams.data.training_files, hparams.data.source_sampling_rate, load_features=True)
+    preprocess(hparams, hparams.data.training_files, hparams.data.target_sampling_rate)
+    preprocess(hparams, hparams.data.validation_files, hparams.data.source_sampling_rate, load_features=True)
+    preprocess(hparams, hparams.data.validation_files, hparams.data.target_sampling_rate)
     
     collate_fn = PreloadAnyVoiceConversionMultiSpeakerCollate()
-    train_loader = DataLoader(train_dataset, batch_size=hparams.train.batch_size, num_workers=16, shuffle=False, pin_memory=True, collate_fn=collate_fn)
+    train_loader = DataLoader(train_dataset, batch_size=hparams.train.batch_size, num_workers=16, shuffle=True, pin_memory=True, collate_fn=collate_fn)
     valid_loader = DataLoader(valid_dataset, batch_size=1, num_workers=16, shuffle=False, pin_memory=True, collate_fn=collate_fn)
 
     model = PreloadVCVITS(**hparams)
 
     checkpoint_callback = ModelCheckpoint(dirpath=None, save_last=True, every_n_train_steps=500)
 
+    devices = [int(n.strip()) for n in args.device.split(",")]
     trainer_params = {
-        "accelerator": "gpu",
-        "devices": [0, 1, 2, 3],
-        "strategy": "ddp",
+        "accelerator": args.accelerator,
+        "devices": devices,
+        
         "callbacks": [checkpoint_callback],
     }
+
+    if len(devices) > 1:
+        trainer_params["strategy"] = "ddp"
 
     trainer_params.update(hparams.trainer)
 
@@ -67,7 +73,7 @@ def main():
         trainer_params["precision"] = 16
     
     trainer = pl.Trainer(**trainer_params)
-    # recover training
+    # resume training
     ckpt_path = None
     if os.path.exists("logs/lightning_logs"):
         versions = glob.glob("logs/lightning_logs/version_*")
