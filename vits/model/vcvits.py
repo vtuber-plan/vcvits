@@ -13,7 +13,6 @@ from .discriminators.multi_period_discriminator import MultiPeriodDiscriminator
 
 from .synthesizers.synthesizer_svc import SynthesizerSVC
 
-from ..text.symbols import symbols
 from ..mel_processing import spec_to_mel_torch, mel_spectrogram_torch
 from .losses import discriminator_loss, kl_loss,feature_loss, generator_loss
 from .. import commons

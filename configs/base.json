@@ -42,6 +42,7 @@
     "num_pitch": 512
   },
   "model": {
+    "hubert_ckpt": "checkpoints/hubert_xtralarge_ll60k.pt",
     "num_pitch": 512,
     "inter_channels": 256,
     "hidden_channels": 512,

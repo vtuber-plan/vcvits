@@ -10,3 +10,4 @@ build
 *.c
 monotonic_align/monotonic_align
 *.wav
+dataset_cache/
