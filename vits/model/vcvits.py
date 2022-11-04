@@ -39,7 +39,7 @@ class VCVITS(pl.LightningModule):
         y_wav, y_wav_lengths = batch["y_wav_values"], batch["y_wav_lengths"]
         y_spec, y_spec_lengths = batch["y_spec_values"], batch["y_spec_lengths"]
 
-        y_hat, l_length, ids_slice, x_mask, z_mask, (z, z_p, m_p, logs_p, m_q, logs_q) = \
+        y_hat, ids_slice, x_mask, z_mask, (z, z_p, m_p, logs_p, m_q, logs_q) = \
             self.net_g(x_wav, x_wav_lengths, x_pitch, x_pitch_lengths, y_spec, y_spec_lengths)
         y = commons.slice_segments(y_wav, ids_slice * self.hparams.data.hop_length, self.hparams.train.segment_size) # slice 
 
@@ -150,10 +150,13 @@ class VCVITS(pl.LightningModule):
     def validation_step(self, batch, batch_idx):
         self.net_g.eval()
         
+        speakers = batch.get("sid", None)
+
         x_wav, x_wav_lengths = batch["x_wav_values"], batch["x_wav_lengths"]
         x_spec, x_spec_lengths = batch["x_spec_values"], batch["x_spec_lengths"]
         x_mel, x_mel_lengths = batch["x_mel_values"], batch["x_mel_lengths"]
         x_pitch, x_pitch_lengths = batch["x_pitch_values"], batch["x_pitch_lengths"]
+
         y_wav, y_wav_lengths = batch["y_wav_values"], batch["y_wav_lengths"]
         y_spec, y_spec_lengths = batch["y_spec_values"], batch["y_spec_lengths"]
 
@@ -162,8 +165,12 @@ class VCVITS(pl.LightningModule):
         x_spec_lengths = x_spec_lengths[:1]
         y_spec = y_spec[:1]
         y_spec_lengths = y_spec_lengths[:1]
-
-        y_hat, attn, mask, (z, z_p, m_p, logs_p) = self.net_g.infer(x_wav, x_wav_lengths, x_pitch, x_pitch_lengths, max_len=1000)
+        
+        len_scale = (self.hparams.data.target_sampling_rate / self.hparams.data.hop_length) \
+                    / (self.hparams.data.source_sampling_rate / self.hparams.data.hubert_downsample)
+        y_hat, mask, (z, z_p, m_p, logs_p) = self.net_g.infer(
+            x_wav, x_wav_lengths, x_pitch, x_pitch_lengths,
+            sid=speakers, length_scale=len_scale, max_len=1000)
         y_hat_lengths = mask.sum([1,2]).long() * self.hparams.data.hop_length
 
         mel = spec_to_mel_torch(
@@ -200,7 +207,6 @@ class VCVITS(pl.LightningModule):
             images=image_dict,
             audios=audio_dict,
             audio_sampling_rate=self.hparams.data.target_sampling_rate)
-
 
     def configure_optimizers(self):
         self.optim_g = torch.optim.AdamW(

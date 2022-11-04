@@ -33,7 +33,7 @@ def get_hparams(config_path: str) -> HParams:
 def main():
     parser = argparse.ArgumentParser()
     parser.add_argument('-c', '--config', type=str, default="./configs/base.json", help='JSON file for configuration')
-    parser.add_argument('-a', '--accelerator', type=str, default="cpu", help='training device')
+    parser.add_argument('-a', '--accelerator', type=str, default="gpu", help='training device')
     parser.add_argument('-d', '--device', type=str, default="0", help='training device ids')
     parser.add_argument('-s', '--skip-preprocess', action='store_true', help='Skip preprocess')
     parser.add_argument('-cd', '--cachedir', type=str, default="./dataset_cache", help='Dataset cache')
@@ -47,7 +47,7 @@ def main():
     valid_dataset = VoiceConversionMultiSpeakerDataset(hparams.data.validation_files, hparams.data, cache_dir)
     
     collate_fn = VoiceConversionMultiSpeakerCollate()
-    train_loader = DataLoader(train_dataset, batch_size=hparams.train.batch_size, num_workers=1, shuffle=True, pin_memory=True, collate_fn=collate_fn)
+    train_loader = DataLoader(train_dataset, batch_size=hparams.train.batch_size, num_workers=0, shuffle=True, pin_memory=True, collate_fn=collate_fn)
     valid_loader = DataLoader(valid_dataset, batch_size=1, num_workers=16, shuffle=False, pin_memory=True, collate_fn=collate_fn)
 
     model = VCVITS(**hparams)

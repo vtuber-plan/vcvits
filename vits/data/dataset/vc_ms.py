@@ -19,6 +19,8 @@ from ..audio import get_audio
 import tqdm
 
 import random
+from joblib import Memory
+import warnings
 
 class VoiceConversionMultiSpeakerDataset(torch.utils.data.Dataset):
     def __init__(self, audiopaths: str, hparams, cache_dir: Optional[str]):
@@ -37,8 +39,9 @@ class VoiceConversionMultiSpeakerDataset(torch.utils.data.Dataset):
         random.shuffle(self.audiopaths)
 
         self.cache_dir = cache_dir
-        # if cache_dir is not None:
-        #     self.get_item = memory.cache(self.get_item)
+        self.memory = Memory(self.cache_dir, verbose=0)
+        if cache_dir is not None:
+            self.get_item = self.memory.cache(self.get_item)
 
     def get_item(self, index: int, pitch_shift: int = 0):
         item = self.audiopaths[index]
@@ -92,7 +95,10 @@ class VoiceConversionMultiSpeakerDataset(torch.utils.data.Dataset):
         else:
             pitch_shift = random.randint(-12, 12)
 
-        return self.get_item(index, pitch_shift)
+        with warnings.catch_warnings():
+            warnings.simplefilter("ignore")
+            ret = self.get_item(index, pitch_shift)
+        return ret
 
     def __len__(self):
         return len(self.audiopaths)

@@ -138,7 +138,7 @@ def load_wav_to_torch(full_path: str) -> Tuple[torch.FloatTensor, int]:
     data, sampling_rate = soundfile.read(full_path, dtype="int16")
     if len(data.shape) >= 2:
         data = np.mean(data, axis=1)
-    return torch.FloatTensor(data.astype(np.float32)), sampling_rate
+    return torch.tensor(data.astype(np.float32), dtype=torch.float), sampling_rate
 
 
 def load_filepaths_and_text(filename: str, split="|") -> List[List[str]]:

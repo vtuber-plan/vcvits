@@ -182,17 +182,18 @@ def get_audio(filename: str,
         audio = resampler(audio)
         sampling_rate = sr
         # raise ValueError("{} {} SR doesn't match target {} SR".format(sampling_rate, self.sampling_rate))
-    original_audio = audio
     if pitch_shift != 0:
-        audio = torchaudio.functional.pitch_shift(audio, sampling_rate, pitch_shift)
+        shifted_audio = torchaudio.functional.pitch_shift(audio, sampling_rate, pitch_shift)
+    else:
+        shifted_audio = audio
     audio_norm = audio / max_wav_value
     audio_norm = audio_norm.unsqueeze(0)
 
-    original_audio_norm = original_audio / max_wav_value
-    original_audio_norm = original_audio_norm.unsqueeze(0)
+    shifted_audio_norm = shifted_audio / max_wav_value
+    shifted_audio_norm = shifted_audio_norm.unsqueeze(0)
 
     # load spec
-    spec = spectrogram_torch(audio_norm, filter_length, sampling_rate, hop_length, win_length, center=False)
+    spec = spectrogram_torch(shifted_audio_norm, filter_length, sampling_rate, hop_length, win_length, center=False)
     spec = torch.squeeze(spec, 0)
 
     # load mel
@@ -202,7 +203,7 @@ def get_audio(filename: str,
     # load pitch
     if load_pitch:
         pitch_mel = estimate_pitch(
-            audio=original_audio_norm.numpy(), sr=sampling_rate, n_fft=filter_length,
+            audio=audio.numpy(), sr=sampling_rate, n_fft=filter_length,
             win_length=win_length, hop_length=320, method='pyin',
             normalize_mean=None, normalize_std=None, n_formants=1)
         
