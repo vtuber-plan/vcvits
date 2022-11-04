@@ -156,19 +156,19 @@ def get_audio_preload(filename: str,
     return spec, audio_norm, melspec, pitch_mel, hubert_features
 
 
+
 def get_audio(filename: str, 
-                max_wav_value: int,
-                filter_length: int,
-                hop_length: int,
-                win_length: int,
-                n_mel_channels: int,
-                mel_fmin: int,
-                mel_fmax: int,
-                hubert_channels: int,
-                num_pitch: int,
-                pitch_shift: int = 0,
-                sr: Optional[int] = None,
-                load_pitch: bool = True):
+        max_wav_value: int,
+        filter_length: int,
+        hop_length: int,
+        win_length: int,
+        n_mel_channels: int,
+        mel_fmin: int,
+        mel_fmax: Optional[int],
+        hubert_channels: int,
+        num_pitch: int,
+        pitch_shift: int = 0,
+        sr: Optional[int] = None):
     global resamplers
     audio, sampling_rate = load_wav_to_torch(filename)
 
@@ -200,16 +200,33 @@ def get_audio(filename: str,
     melspec = spec_to_mel_torch(spec, filter_length, n_mel_channels, sampling_rate, mel_fmin, mel_fmax)
     melspec = torch.squeeze(melspec, 0)
 
-    # load pitch
-    if load_pitch:
-        pitch_mel = estimate_pitch(
-            audio=audio.numpy(), sr=sampling_rate, n_fft=filter_length,
-            win_length=win_length, hop_length=320, method='pyin',
-            normalize_mean=None, normalize_std=None, n_formants=1)
-        
-        coarse_pitch = coarse_f0(pitch_mel, f0_bin=num_pitch)
-        pitch_mel = coarse_pitch
-    else:
-        pitch_mel = None
+    return spec, audio_norm, melspec
 
-    return spec, audio_norm, melspec, pitch_mel
+
+def get_pitch(filename: str,
+        filter_length: int,
+        win_length: int,
+        num_pitch: int,
+        sr: Optional[int] = None):
+    global resamplers
+    audio, sampling_rate = load_wav_to_torch(filename)
+
+    if sr is not None and sampling_rate != sr:
+        # not match, then resample
+        if sr in resamplers:
+            resampler = resamplers[(sampling_rate, sr)]
+        else:
+            resampler = torchaudio.transforms.Resample(orig_freq=sampling_rate, new_freq=sr)
+            resamplers[(sampling_rate, sr)] = resampler
+        audio = resampler(audio)
+        sampling_rate = sr
+
+    pitch_mel = estimate_pitch(
+        audio=audio.numpy(), sr=sampling_rate, n_fft=filter_length,
+        win_length=win_length, hop_length=320, method='pyin',
+        normalize_mean=None, normalize_std=None, n_formants=1)
+    
+    coarse_pitch = coarse_f0(pitch_mel, f0_bin=num_pitch)
+    pitch_mel = coarse_pitch
+
+    return pitch_mel

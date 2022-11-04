@@ -32,54 +32,21 @@ class VCVITS(pl.LightningModule):
         # self.net_pitch_d = PitchDiscriminator(self.hparams.model.use_spectral_norm)
 
     def training_step(self, batch: Dict[str, torch.Tensor], batch_idx: int, optimizer_idx: int):
+        speakers = batch.get("sid", None)
         x_wav, x_wav_lengths = batch["x_wav_values"], batch["x_wav_lengths"]
         x_spec, x_spec_lengths = batch["x_spec_values"], batch["x_spec_lengths"]
         x_mel, x_mel_lengths = batch["x_mel_values"], batch["x_mel_lengths"]
         x_pitch, x_pitch_lengths = batch["x_pitch_values"], batch["x_pitch_lengths"]
+
         y_wav, y_wav_lengths = batch["y_wav_values"], batch["y_wav_lengths"]
         y_spec, y_spec_lengths = batch["y_spec_values"], batch["y_spec_lengths"]
 
         y_hat, ids_slice, x_mask, z_mask, (z, z_p, m_p, logs_p, m_q, logs_q) = \
-            self.net_g(x_wav, x_wav_lengths, x_pitch, x_pitch_lengths, y_spec, y_spec_lengths)
+            self.net_g(x_wav, x_wav_lengths, x_pitch, x_pitch_lengths, y_spec, y_spec_lengths, sid=speakers)
         y = commons.slice_segments(y_wav, ids_slice * self.hparams.data.hop_length, self.hparams.train.segment_size) # slice 
 
-        # Discriminator
-        if optimizer_idx == 0:
-            # MPD
-            y_dp_hat_r, y_dp_hat_g, _, _ = self.net_period_d(y, y_hat.detach())
-            loss_disc_p, losses_disc_p_r, losses_disc_p_g = discriminator_loss(y_dp_hat_r, y_dp_hat_g)
-
-            # MSD
-            y_ds_hat_r, y_ds_hat_g, _, _ = self.net_scale_d(y, y_hat.detach())
-            loss_disc_s, losses_disc_s_r, losses_disc_s_g = discriminator_loss(y_ds_hat_r, y_ds_hat_g)
-
-            loss_disc_all = (loss_disc_p + loss_disc_s) / 2
-
-            grad_norm_p_d = commons.clip_grad_value_(self.net_period_d.parameters(), None)
-            grad_norm_s_d = commons.clip_grad_value_(self.net_scale_d.parameters(), None)
-
-            # log
-            lr = self.optim_g.param_groups[0]['lr']
-            scalar_dict = {"loss/d/total": loss_disc_all, "learning_rate": lr, "grad_norm_p_d": grad_norm_p_d, "grad_norm_s_d": grad_norm_s_d}
-            scalar_dict.update({"loss/d_p_r/{}".format(i): v for i, v in enumerate(losses_disc_p_r)})
-            scalar_dict.update({"loss/d_p_g/{}".format(i): v for i, v in enumerate(losses_disc_p_g)})
-            scalar_dict.update({"loss/d_s_r/{}".format(i): v for i, v in enumerate(losses_disc_s_r)})
-            scalar_dict.update({"loss/d_s_g/{}".format(i): v for i, v in enumerate(losses_disc_s_g)})
-
-            image_dict = {}
-            
-            tensorboard = self.logger.experiment
-
-            utils.summarize(
-                writer=tensorboard,
-                global_step=self.global_step, 
-                images=image_dict,
-                scalars=scalar_dict)
-
-            return loss_disc_all
-        
         # Generator
-        if optimizer_idx == 1:
+        if optimizer_idx == 0:
             mel = spec_to_mel_torch(
                 y_spec, 
                 self.hparams.data.filter_length, 
@@ -109,12 +76,10 @@ class VCVITS(pl.LightningModule):
 
             # kl
             loss_kl = kl_loss(z_p, logs_q, m_p, logs_p, z_mask) * self.hparams.train.c_kl
-            # dur
-            loss_dur = torch.sum(l_length.float()) * self.hparams.train.c_dur
             # mel
             loss_mel = F.l1_loss(y_mel, y_hat_mel) * self.hparams.train.c_mel
 
-            loss_gen_all = ((loss_s_gen + loss_s_fm) + (loss_p_gen + loss_p_fm)) / 2 + loss_kl + loss_dur + loss_mel
+            loss_gen_all = (loss_s_gen + loss_s_fm) + (loss_p_gen + loss_p_fm) + loss_mel + loss_kl
 
             grad_norm_g = commons.clip_grad_value_(self.net_g.parameters(), None)
 
@@ -127,7 +92,6 @@ class VCVITS(pl.LightningModule):
                 "loss/g/p_gen": loss_p_gen,
                 "loss/g/s_gen": loss_s_gen,
                 "loss/g/mel": loss_mel,
-                "loss/g/kl": loss_kl,
             })
 
             # scalar_dict.update({"loss/g/p_gen_{}".format(i): v for i, v in enumerate(losses_p_gen)})
@@ -146,6 +110,41 @@ class VCVITS(pl.LightningModule):
                 images=image_dict,
                 scalars=scalar_dict)
             return loss_gen_all
+
+        # Discriminator
+        if optimizer_idx == 1:
+            # MPD
+            y_dp_hat_r, y_dp_hat_g, _, _ = self.net_period_d(y, y_hat.detach())
+            loss_disc_p, losses_disc_p_r, losses_disc_p_g = discriminator_loss(y_dp_hat_r, y_dp_hat_g)
+
+            # MSD
+            y_ds_hat_r, y_ds_hat_g, _, _ = self.net_scale_d(y, y_hat.detach())
+            loss_disc_s, losses_disc_s_r, losses_disc_s_g = discriminator_loss(y_ds_hat_r, y_ds_hat_g)
+
+            loss_disc_all = loss_disc_p + loss_disc_s
+
+            grad_norm_p_d = commons.clip_grad_value_(self.net_period_d.parameters(), None)
+            grad_norm_s_d = commons.clip_grad_value_(self.net_scale_d.parameters(), None)
+
+            # log
+            lr = self.optim_g.param_groups[0]['lr']
+            scalar_dict = {"loss/d/total": loss_disc_all, "learning_rate": lr, "grad_norm_p_d": grad_norm_p_d, "grad_norm_s_d": grad_norm_s_d}
+            scalar_dict.update({"loss/d_p_r/{}".format(i): v for i, v in enumerate(losses_disc_p_r)})
+            scalar_dict.update({"loss/d_p_g/{}".format(i): v for i, v in enumerate(losses_disc_p_g)})
+            scalar_dict.update({"loss/d_s_r/{}".format(i): v for i, v in enumerate(losses_disc_s_r)})
+            scalar_dict.update({"loss/d_s_g/{}".format(i): v for i, v in enumerate(losses_disc_s_g)})
+
+            image_dict = {}
+            
+            tensorboard = self.logger.experiment
+
+            utils.summarize(
+                writer=tensorboard,
+                global_step=self.global_step, 
+                images=image_dict,
+                scalars=scalar_dict)
+
+            return loss_disc_all
 
     def validation_step(self, batch, batch_idx):
         self.net_g.eval()
@@ -224,4 +223,4 @@ class VCVITS(pl.LightningModule):
         self.scheduler_d = torch.optim.lr_scheduler.ExponentialLR(self.optim_d, gamma=self.hparams.train.lr_decay)
         self.scheduler_d.last_epoch = self.current_epoch - 1
 
-        return [self.optim_d, self.optim_g], [self.scheduler_d, self.scheduler_g]
+        return [self.optim_g, self.optim_d], [self.scheduler_g, self.scheduler_d]

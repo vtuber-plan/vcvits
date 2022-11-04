@@ -15,7 +15,7 @@ import torchaudio
  
 from vits.mel_processing import MAX_WAV_VALUE, mel_spectrogram_torch, spec_to_mel_torch, spectrogram_torch
 from vits.utils import load_filepaths, load_wav_to_torch, load_filepaths_and_text
-from ..audio import get_audio
+from ..audio import coarse_f0, estimate_pitch, get_audio, get_pitch
 import tqdm
 
 import random
@@ -41,7 +41,8 @@ class VoiceConversionMultiSpeakerDataset(torch.utils.data.Dataset):
         self.cache_dir = cache_dir
         self.memory = Memory(self.cache_dir, verbose=0)
         if cache_dir is not None:
-            self.get_item = self.memory.cache(self.get_item)
+            self.get_audio = self.memory.cache(get_audio)
+            self.get_pitch = self.memory.cache(get_pitch)
 
     def get_item(self, index: int, pitch_shift: int = 0):
         item = self.audiopaths[index]
@@ -50,7 +51,7 @@ class VoiceConversionMultiSpeakerDataset(torch.utils.data.Dataset):
             sid = 0
         else:
             sid = int(item[1])
-        x_spec, x_wav, x_melspec, x_pitch_mel = get_audio(
+        x_spec, x_wav, x_melspec = self.get_audio(
             audiopath,
             max_wav_value = self.max_wav_value,
             filter_length = self.filter_length,
@@ -62,9 +63,15 @@ class VoiceConversionMultiSpeakerDataset(torch.utils.data.Dataset):
             hubert_channels = self.hparams.hubert_channels,
             num_pitch = self.hparams.num_pitch,
             pitch_shift = pitch_shift,
-            sr=self.source_sampling_rate,
-            load_pitch=True)
-        y_spec, y_wav, y_melspec, y_pitch_mel = get_audio(
+            sr=self.source_sampling_rate)
+        x_pitch_mel = self.get_pitch(
+            audiopath,
+            self.hparams.filter_length,
+            self.hparams.win_length,
+            self.hparams.num_pitch,
+            self.source_sampling_rate
+        )
+        y_spec, y_wav, y_melspec = self.get_audio(
             audiopath,
             max_wav_value = self.max_wav_value,
             filter_length = self.filter_length,
@@ -75,8 +82,7 @@ class VoiceConversionMultiSpeakerDataset(torch.utils.data.Dataset):
             mel_fmax = self.hparams.mel_fmax,
             hubert_channels = self.hparams.hubert_channels,
             num_pitch = self.hparams.num_pitch,
-            sr=self.target_sampling_rate,
-            load_pitch=False)
+            sr=self.target_sampling_rate)
         return {
             "sid": sid,
 
