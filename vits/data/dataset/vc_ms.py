@@ -18,8 +18,6 @@ from vits.utils import load_filepaths, load_wav_to_torch, load_filepaths_and_tex
 from ..audio import get_audio
 import tqdm
 
-from joblib import Memory
-import warnings
 import random
 
 class VoiceConversionMultiSpeakerDataset(torch.utils.data.Dataset):
@@ -39,9 +37,8 @@ class VoiceConversionMultiSpeakerDataset(torch.utils.data.Dataset):
         random.shuffle(self.audiopaths)
 
         self.cache_dir = cache_dir
-        if cache_dir is not None:
-            self.memory = Memory(self.cache_dir, verbose=0)
-            self.get_item_cached = self.memory.cache(self.get_item)
+        # if cache_dir is not None:
+        #     self.get_item = memory.cache(self.get_item)
 
     def get_item(self, index: int, pitch_shift: int = 0):
         item = self.audiopaths[index]
@@ -62,7 +59,8 @@ class VoiceConversionMultiSpeakerDataset(torch.utils.data.Dataset):
             hubert_channels = self.hparams.hubert_channels,
             num_pitch = self.hparams.num_pitch,
             pitch_shift = pitch_shift,
-            sr=self.source_sampling_rate)
+            sr=self.source_sampling_rate,
+            load_pitch=True)
         y_spec, y_wav, y_melspec, y_pitch_mel = get_audio(
             audiopath,
             max_wav_value = self.max_wav_value,
@@ -74,7 +72,8 @@ class VoiceConversionMultiSpeakerDataset(torch.utils.data.Dataset):
             mel_fmax = self.hparams.mel_fmax,
             hubert_channels = self.hparams.hubert_channels,
             num_pitch = self.hparams.num_pitch,
-            sr=self.target_sampling_rate)
+            sr=self.target_sampling_rate,
+            load_pitch=False)
         return {
             "sid": sid,
 
@@ -85,8 +84,6 @@ class VoiceConversionMultiSpeakerDataset(torch.utils.data.Dataset):
 
             "y_spec": y_spec,
             "y_wav": y_wav,
-            "y_mel": y_melspec,
-            "y_pitch": y_pitch_mel,
         }
 
     def __getitem__(self, index):
@@ -95,12 +92,7 @@ class VoiceConversionMultiSpeakerDataset(torch.utils.data.Dataset):
         else:
             pitch_shift = random.randint(-12, 12)
 
-        if hasattr(self, "get_item_cached"):
-            with warnings.catch_warnings():
-                warnings.simplefilter("ignore")
-                return self.get_item_cached(index, pitch_shift)
-        else:
-            return self.get_item(index, pitch_shift)
+        return self.get_item(index, pitch_shift)
 
     def __len__(self):
         return len(self.audiopaths)

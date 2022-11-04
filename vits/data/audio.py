@@ -167,7 +167,8 @@ def get_audio(filename: str,
                 hubert_channels: int,
                 num_pitch: int,
                 pitch_shift: int = 0,
-                sr: Optional[int] = None):
+                sr: Optional[int] = None,
+                load_pitch: bool = True):
     global resamplers
     audio, sampling_rate = load_wav_to_torch(filename)
 
@@ -199,12 +200,15 @@ def get_audio(filename: str,
     melspec = torch.squeeze(melspec, 0)
 
     # load pitch
-    pitch_mel = estimate_pitch(
-        audio=original_audio_norm.numpy(), sr=sampling_rate, n_fft=filter_length,
-        win_length=win_length, hop_length=320, method='pyin',
-        normalize_mean=None, normalize_std=None, n_formants=1)
-    
-    coarse_pitch = coarse_f0(pitch_mel, f0_bin=num_pitch)
-    pitch_mel = coarse_pitch
+    if load_pitch:
+        pitch_mel = estimate_pitch(
+            audio=original_audio_norm.numpy(), sr=sampling_rate, n_fft=filter_length,
+            win_length=win_length, hop_length=320, method='pyin',
+            normalize_mean=None, normalize_std=None, n_formants=1)
+        
+        coarse_pitch = coarse_f0(pitch_mel, f0_bin=num_pitch)
+        pitch_mel = coarse_pitch
+    else:
+        pitch_mel = None
 
     return spec, audio_norm, melspec, pitch_mel

@@ -33,7 +33,7 @@ def get_hparams(config_path: str) -> HParams:
 def main():
     parser = argparse.ArgumentParser()
     parser.add_argument('-c', '--config', type=str, default="./configs/base.json", help='JSON file for configuration')
-    parser.add_argument('-a', '--accelerator', type=str, default="gpu", help='training device')
+    parser.add_argument('-a', '--accelerator', type=str, default="cpu", help='training device')
     parser.add_argument('-d', '--device', type=str, default="0", help='training device ids')
     parser.add_argument('-s', '--skip-preprocess', action='store_true', help='Skip preprocess')
     parser.add_argument('-cd', '--cachedir', type=str, default="./dataset_cache", help='Dataset cache')
@@ -45,12 +45,6 @@ def main():
     cache_dir = args.cachedir if len(args.cachedir.strip()) != 0 else None
     train_dataset = VoiceConversionMultiSpeakerDataset(hparams.data.training_files, hparams.data, cache_dir)
     valid_dataset = VoiceConversionMultiSpeakerDataset(hparams.data.validation_files, hparams.data, cache_dir)
-
-    # if "skip-preprocess" in args and vars(args)["skip-preprocess"]:
-    #     preprocess(hparams, hparams.data.training_files, hparams.data.source_sampling_rate, load_features=True)
-    #     preprocess(hparams, hparams.data.training_files, hparams.data.target_sampling_rate)
-    #     preprocess(hparams, hparams.data.validation_files, hparams.data.source_sampling_rate, load_features=True)
-    #     preprocess(hparams, hparams.data.validation_files, hparams.data.target_sampling_rate)
     
     collate_fn = VoiceConversionMultiSpeakerCollate()
     train_loader = DataLoader(train_dataset, batch_size=hparams.train.batch_size, num_workers=1, shuffle=True, pin_memory=True, collate_fn=collate_fn)
@@ -63,10 +57,11 @@ def main():
     devices = [int(n.strip()) for n in args.device.split(",")]
     trainer_params = {
         "accelerator": args.accelerator,
-        "devices": devices,
-        
         "callbacks": [checkpoint_callback],
     }
+
+    if args.accelerator != "cpu":
+        trainer_params["devices"] = devices
 
     if len(devices) > 1:
         trainer_params["strategy"] = "ddp"
