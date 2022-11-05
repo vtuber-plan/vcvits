@@ -185,8 +185,7 @@ class VCVITS(pl.LightningModule):
         y_spec = y_spec[:1]
         y_spec_lengths = y_spec_lengths[:1]
         
-        len_scale = (self.hparams.data.target_sampling_rate / self.hparams.data.hop_length) \
-                    / (self.hparams.data.source_sampling_rate / self.hparams.data.hubert_downsample)
+        len_scale = (self.hparams.data.target_sampling_rate / self.hparams.data.hop_length) / self.hparams.data.source_sampling_rate
         y_hat, mask, (z, z_p, m_p, logs_p) = self.net_g.infer(
             x_wav, x_wav_lengths, x_pitch, x_pitch_lengths,
             sid=speakers, length_scale=len_scale, max_len=1000)
