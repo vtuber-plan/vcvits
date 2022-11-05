@@ -46,12 +46,16 @@ def main():
     pl.utilities.seed.seed_everything(hparams.train.seed)
 
     cache_dir = args.cachedir if len(args.cachedir.strip()) != 0 else None
+
+    if not os.path.exists(cache_dir):
+        os.makedirs(cache_dir, exist_ok=True)
+
     train_dataset = VoiceConversionMultiSpeakerDataset(hparams.data.training_files, hparams.data, cache_dir)
     valid_dataset = VoiceConversionMultiSpeakerDataset(hparams.data.validation_files, hparams.data, cache_dir)
 
     # preprocess
     print("Preprocess...")
-    if True or args.skip_preprocess:
+    if args.skip_preprocess:
         print("skip preprocessing..")
     else:
         Parallel(n_jobs=64, backend="loky")\
