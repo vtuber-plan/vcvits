@@ -12,6 +12,7 @@ from librosa.util import normalize, pad_center, tiny
 from scipy.signal import get_window
 from scipy.io.wavfile import read
 from librosa.filters import mel as librosa_mel_fn
+import torchaudio
 
 MAX_WAV_VALUE = 32768.0
 
@@ -67,6 +68,26 @@ def spectrogram_torch(y, n_fft: int, sampling_rate: int, hop_size: int, win_size
                       center=center, pad_mode='reflect', normalized=False, onesided=True, return_complex=False)
 
     spec = torch.sqrt(spec.pow(2).sum(-1) + 1e-6)
+    return spec
+
+def spectrogram_torch_audio(y, n_fft: int, sampling_rate: int, hop_size: int, win_size: int, center: bool=False):
+    if torch.min(y) < -1.:
+        print('min value is ', torch.min(y))
+    if torch.max(y) > 1.:
+        print('max value is ', torch.max(y))
+
+    global hann_window
+    dtype_device = str(y.dtype) + '_' + str(y.device)
+    wnsize_dtype_device = str(win_size) + '_' + dtype_device
+    if wnsize_dtype_device not in hann_window:
+        hann_window[wnsize_dtype_device] = torch.hann_window(win_size).to(dtype=y.dtype, device=y.device)
+
+    pad = int((n_fft-hop_size)/2)
+
+    spec = torchaudio.functional.spectrogram(y, pad, hann_window[wnsize_dtype_device],
+            n_fft, hop_size, win_size, 2,
+            center=center, pad_mode='reflect', normalized=False, onesided=True, return_complex=False)
+
     return spec
 
 def spec_to_mel_torch(spec, n_fft, num_mels, sampling_rate, fmin, fmax):

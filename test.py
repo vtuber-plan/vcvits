@@ -7,7 +7,7 @@ effects = [
     ["lowpass", "-1", "300"], # apply single-pole lowpass filter
 ]
 
-shifted_audio = torchaudio.functional.pitch_shift(audio, sr, -4)
+shifted_audio = torchaudio.functional.pitch_shift(audio, sr, -8)
 x_shifted_audio, new_sample_rate = torchaudio.sox_effects.apply_effects_tensor(shifted_audio, sr, effects)
 
 print(audio.dtype)

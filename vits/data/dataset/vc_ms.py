@@ -47,8 +47,6 @@ class VoiceConversionMultiSpeakerDataset(torch.utils.data.Dataset):
         self.memory = Memory(self.cache_dir, verbose=0)
         if cache_dir is not None:
             self.load_audio = self.memory.cache(load_audio)
-            self.shift_audio = shift_audio
-            self.get_audio = get_audio
             self.get_pitch = self.memory.cache(get_pitch)
 
     def get_item(self, index: int, pitch_shift: int = 0, apply_effect: bool=False):
@@ -60,28 +58,8 @@ class VoiceConversionMultiSpeakerDataset(torch.utils.data.Dataset):
             sid = int(item[1])
         
         x_audio = self.load_audio(audiopath, sr=self.source_sampling_rate)
-        x_shifted_audio = self.shift_audio(x_audio, sr=self.source_sampling_rate, pitch_shift = pitch_shift)
+        x_wav = x_audio.unsqueeze(0)
 
-        # Apply effects
-        if apply_effect:
-            x_shifted_audio, new_sample_rate = torchaudio.sox_effects.apply_effects_tensor(x_shifted_audio, self.source_sampling_rate, self.effects)
-
-        x_wav = x_shifted_audio.unsqueeze(0)
-
-        x_spec, x_melspec = self.get_audio(
-            x_wav,
-            max_wav_value = self.max_wav_value,
-            filter_length = self.filter_length,
-            hop_length = self.hop_length,
-            win_length = self.win_length,
-            n_mel_channels = self.hparams.n_mel_channels,
-            mel_fmin = self.hparams.mel_fmin,
-            mel_fmax = self.hparams.mel_fmax,
-            hubert_channels = self.hparams.hubert_channels,
-            num_pitch = self.hparams.num_pitch,
-            sr=self.source_sampling_rate,
-            load_spec=False,
-            load_mel=False)
         x_pitch_mel = self.get_pitch(
             audiopath,
             self.hparams.filter_length,
@@ -92,28 +70,12 @@ class VoiceConversionMultiSpeakerDataset(torch.utils.data.Dataset):
 
         y_audio = self.load_audio(audiopath, sr=self.target_sampling_rate)
         y_wav = y_audio.unsqueeze(0)
-
-        y_spec, y_melspec = self.get_audio(
-            y_wav,
-            max_wav_value = self.max_wav_value,
-            filter_length = self.filter_length,
-            hop_length = self.hop_length,
-            win_length = self.win_length,
-            n_mel_channels = self.hparams.n_mel_channels,
-            mel_fmin = self.hparams.mel_fmin,
-            mel_fmax = self.hparams.mel_fmax,
-            hubert_channels = self.hparams.hubert_channels,
-            num_pitch = self.hparams.num_pitch,
-            sr=self.target_sampling_rate,
-            load_spec=True,
-            load_mel=False)
         return {
             "sid": sid,
 
             "x_wav": x_wav,
             "x_pitch": x_pitch_mel,
 
-            "y_spec": y_spec,
             "y_wav": y_wav,
         }
 

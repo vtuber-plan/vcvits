@@ -5,6 +5,9 @@ import torch
 from torch import nn
 from torch.nn import functional as F
 from torch import optim
+import torchaudio
+
+import random
 
 import pytorch_lightning as pl
 
@@ -13,7 +16,7 @@ from .discriminators.multi_period_discriminator import MultiPeriodDiscriminator
 
 from .synthesizers.synthesizer_svc import SynthesizerSVC
 
-from ..mel_processing import spec_to_mel_torch, mel_spectrogram_torch
+from ..mel_processing import spec_to_mel_torch, mel_spectrogram_torch, spectrogram_torch, spectrogram_torch_audio
 from .losses import discriminator_loss, kl_loss,feature_loss, generator_loss
 from .. import commons
 from .. import utils
@@ -26,6 +29,7 @@ class VCVITS(pl.LightningModule):
         self.net_g = SynthesizerSVC(
             self.hparams.data.filter_length // 2 + 1,
             self.hparams.train.segment_size // self.hparams.data.hop_length,
+            n_speakers=self.hparams.data.n_speakers,
             **self.hparams.model)
         self.net_period_d = MultiPeriodDiscriminator(self.hparams.model.use_spectral_norm)
         self.net_scale_d = MultiScaleDiscriminator(self.hparams.model.use_spectral_norm)
@@ -37,8 +41,24 @@ class VCVITS(pl.LightningModule):
         x_pitch, x_pitch_lengths = batch["x_pitch_values"], batch["x_pitch_lengths"]
 
         y_wav, y_wav_lengths = batch["y_wav_values"], batch["y_wav_lengths"]
-        y_spec, y_spec_lengths = batch["y_spec_values"], batch["y_spec_lengths"]
 
+        # transform
+        if random.random() < 0.3:
+            pitch_shift = 0
+        else:
+            pitch_shift = random.randint(-12, 12)
+
+        if pitch_shift != 0:
+            x_wav = torchaudio.functional.pitch_shift(x_wav, self.hparams.data.source_sampling_rate, pitch_shift)
+        
+        y_spec = spectrogram_torch_audio(y_wav.squeeze(1),
+            self.hparams.data.filter_length,
+            self.hparams.data.target_sampling_rate,
+            self.hparams.data.hop_length,
+            self.hparams.data.win_length, center=False)
+        y_spec_lengths = (y_wav_lengths / self.hparams.data.hop_length).long()
+
+        # generator forward
         y_hat, ids_slice, x_mask, z_mask, (z, z_p, m_p, logs_p, m_q, logs_q) = \
             self.net_g(x_wav, x_wav_lengths, x_pitch, x_pitch_lengths, y_spec, y_spec_lengths, sid=speakers)
         y = commons.slice_segments(y_wav, ids_slice * self.hparams.data.hop_length, self.hparams.train.segment_size) # slice 
@@ -153,7 +173,13 @@ class VCVITS(pl.LightningModule):
         x_pitch, x_pitch_lengths = batch["x_pitch_values"], batch["x_pitch_lengths"]
 
         y_wav, y_wav_lengths = batch["y_wav_values"], batch["y_wav_lengths"]
-        y_spec, y_spec_lengths = batch["y_spec_values"], batch["y_spec_lengths"]
+
+        y_spec = spectrogram_torch_audio(y_wav.squeeze(1),
+            self.hparams.data.filter_length,
+            self.hparams.data.target_sampling_rate,
+            self.hparams.data.hop_length,
+            self.hparams.data.win_length, center=False)
+        y_spec_lengths = (y_wav_lengths / self.hparams.data.hop_length).long()
 
         # remove else
         y_spec = y_spec[:1]

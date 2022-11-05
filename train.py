@@ -51,7 +51,7 @@ def main():
 
     # preprocess
     print("Preprocess...")
-    if args.skip_preprocess:
+    if True or args.skip_preprocess:
         print("skip preprocessing..")
     else:
         Parallel(n_jobs=64, backend="loky")\
@@ -62,7 +62,7 @@ def main():
             pass
         
     collate_fn = VoiceConversionMultiSpeakerCollate()
-    train_loader = DataLoader(train_dataset, batch_size=hparams.train.batch_size, num_workers=8, shuffle=False, pin_memory=True, collate_fn=collate_fn)
+    train_loader = DataLoader(train_dataset, batch_size=hparams.train.batch_size, num_workers=16, shuffle=True, pin_memory=True, collate_fn=collate_fn)
     valid_loader = DataLoader(valid_dataset, batch_size=1, num_workers=16, shuffle=False, pin_memory=True, collate_fn=collate_fn)
 
     model = VCVITS(**hparams)

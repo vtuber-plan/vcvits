@@ -143,7 +143,6 @@ class VoiceConversionMultiSpeakerCollate():
         max_x_wav_len = max([x["x_wav"].size(1) for x in batch])
         max_x_pitch_len = max([x["x_pitch"].size(1) for x in batch])
 
-        max_y_spec_len = max([x["y_spec"].size(1) for x in batch])
         max_y_wav_len = max([x["y_wav"].size(1) for x in batch])
 
         sid = torch.LongTensor(len(batch))
@@ -151,13 +150,11 @@ class VoiceConversionMultiSpeakerCollate():
         x_wav_lengths = torch.LongTensor(len(batch))
         x_pitch_lengths = torch.LongTensor(len(batch))
 
-        y_spec_lengths = torch.LongTensor(len(batch))
         y_wav_lengths = torch.LongTensor(len(batch))
 
         x_wav_padded = torch.zeros(len(batch), 1, max_x_wav_len, dtype=torch.float32)
         x_pitch_padded = torch.zeros(len(batch), max_x_pitch_len, dtype=torch.long)
 
-        y_spec_padded = torch.zeros(len(batch), batch[0]["y_spec"].size(0), max_y_spec_len, dtype=torch.float32)
         y_wav_padded = torch.zeros(len(batch), 1, max_y_wav_len, dtype=torch.float32)
 
         for i in range(len(ids_sorted_decreasing)):
@@ -177,10 +174,6 @@ class VoiceConversionMultiSpeakerCollate():
             y_wav_padded[i, :, :wav.size(1)] = wav
             y_wav_lengths[i] = wav.size(1)
 
-            spec = row["y_spec"]
-            y_spec_padded[i, :, :spec.size(1)] = spec
-            y_spec_lengths[i] = spec.size(1)
-
         ret = {
             "sid": sid,
             
@@ -189,8 +182,6 @@ class VoiceConversionMultiSpeakerCollate():
             "x_pitch_values": x_pitch_padded,
             "x_pitch_lengths": x_pitch_lengths,
 
-            "y_spec_values": y_spec_padded,
-            "y_spec_lengths": y_spec_lengths,
             "y_wav_values": y_wav_padded,
             "y_wav_lengths": y_wav_lengths,
         }
