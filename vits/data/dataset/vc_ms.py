@@ -22,7 +22,7 @@ import random
 import hashlib
 
 def hash_string(s: str) -> str:
-    hash_object = hashlib.md5(hashlib.encode("utf-8"))
+    hash_object = hashlib.md5(s.encode("utf-8"))
     return hash_object.hexdigest()
 
 class VoiceConversionMultiSpeakerDataset(torch.utils.data.Dataset):
