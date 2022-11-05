@@ -85,8 +85,10 @@ def spectrogram_torch_audio(y, n_fft: int, sampling_rate: int, hop_size: int, wi
     pad = int((n_fft-hop_size)/2)
 
     spec = torchaudio.functional.spectrogram(y, pad, hann_window[wnsize_dtype_device],
-            n_fft, hop_size, win_size, 2,
-            center=center, pad_mode='reflect', normalized=True, onesided=True, return_complex=False)
+            n_fft, hop_size, win_size, None,
+            center=center, pad_mode='reflect', normalized=False, onesided=True, return_complex=False)
+    
+    spec = torch.sqrt(spec.real.pow(2) + spec.imag.pow(2) + 1e-6)
 
     return spec
 
