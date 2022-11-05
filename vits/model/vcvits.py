@@ -34,8 +34,6 @@ class VCVITS(pl.LightningModule):
     def training_step(self, batch: Dict[str, torch.Tensor], batch_idx: int, optimizer_idx: int):
         speakers = batch.get("sid", None)
         x_wav, x_wav_lengths = batch["x_wav_values"], batch["x_wav_lengths"]
-        x_spec, x_spec_lengths = batch["x_spec_values"], batch["x_spec_lengths"]
-        x_mel, x_mel_lengths = batch["x_mel_values"], batch["x_mel_lengths"]
         x_pitch, x_pitch_lengths = batch["x_pitch_values"], batch["x_pitch_lengths"]
 
         y_wav, y_wav_lengths = batch["y_wav_values"], batch["y_wav_lengths"]
@@ -152,16 +150,12 @@ class VCVITS(pl.LightningModule):
         speakers = batch.get("sid", None)
 
         x_wav, x_wav_lengths = batch["x_wav_values"], batch["x_wav_lengths"]
-        x_spec, x_spec_lengths = batch["x_spec_values"], batch["x_spec_lengths"]
-        x_mel, x_mel_lengths = batch["x_mel_values"], batch["x_mel_lengths"]
         x_pitch, x_pitch_lengths = batch["x_pitch_values"], batch["x_pitch_lengths"]
 
         y_wav, y_wav_lengths = batch["y_wav_values"], batch["y_wav_lengths"]
         y_spec, y_spec_lengths = batch["y_spec_values"], batch["y_spec_lengths"]
 
         # remove else
-        x_spec = x_spec[:1]
-        x_spec_lengths = x_spec_lengths[:1]
         y_spec = y_spec[:1]
         y_spec_lengths = y_spec_lengths[:1]
         

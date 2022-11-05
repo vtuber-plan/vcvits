@@ -137,12 +137,10 @@ class VoiceConversionMultiSpeakerCollate():
     def __call__(self, batch):
         # Right zero-pad all one-hot text sequences to max input length
         _, ids_sorted_decreasing = torch.sort(
-            torch.LongTensor([x["x_spec"].size(1) for x in batch]),
+            torch.LongTensor([x["x_wav"].size(1) for x in batch]),
             dim=0, descending=True)
 
-        max_x_spec_len = max([x["x_spec"].size(1) for x in batch])
         max_x_wav_len = max([x["x_wav"].size(1) for x in batch])
-        max_x_mel_len = max([x["x_mel"].size(1) for x in batch])
         max_x_pitch_len = max([x["x_pitch"].size(1) for x in batch])
 
         max_y_spec_len = max([x["y_spec"].size(1) for x in batch])
@@ -150,20 +148,16 @@ class VoiceConversionMultiSpeakerCollate():
 
         sid = torch.LongTensor(len(batch))
 
-        x_spec_lengths = torch.LongTensor(len(batch))
         x_wav_lengths = torch.LongTensor(len(batch))
-        x_mel_lengths = torch.LongTensor(len(batch))
         x_pitch_lengths = torch.LongTensor(len(batch))
 
         y_spec_lengths = torch.LongTensor(len(batch))
         y_wav_lengths = torch.LongTensor(len(batch))
 
-        x_spec_padded = torch.zeros(len(batch), batch[0]["x_spec"].size(0), max_x_spec_len, dtype=torch.float32)
         x_wav_padded = torch.zeros(len(batch), 1, max_x_wav_len, dtype=torch.float32)
-        x_mel_padded = torch.zeros(len(batch), batch[0]["x_mel"].size(0), max_x_mel_len, dtype=torch.float32)
         x_pitch_padded = torch.zeros(len(batch), max_x_pitch_len, dtype=torch.long)
 
-        y_spec_padded = torch.zeros(len(batch), batch[0]["x_spec"].size(0), max_y_spec_len, dtype=torch.float32)
+        y_spec_padded = torch.zeros(len(batch), batch[0]["y_spec"].size(0), max_y_spec_len, dtype=torch.float32)
         y_wav_padded = torch.zeros(len(batch), 1, max_y_wav_len, dtype=torch.float32)
 
         for i in range(len(ids_sorted_decreasing)):
@@ -171,39 +165,27 @@ class VoiceConversionMultiSpeakerCollate():
 
             sid[i] = row["sid"]
 
-            spec = row["x_spec"]
-            x_spec_padded[i, :, :spec.size(1)] = spec
-            x_spec_lengths[i] = spec.size(1)
-
             wav = row["x_wav"]
             x_wav_padded[i, :, :wav.size(1)] = wav
             x_wav_lengths[i] = wav.size(1)
-
-            mel = row["x_mel"]
-            x_mel_padded[i, :, :mel.size(1)] = mel
-            x_mel_lengths[i] = mel.size(1)
 
             pitch = row["x_pitch"]
             x_pitch_padded[i, :pitch.size(1)] = pitch
             x_pitch_lengths[i] = pitch.size(1)
 
-            spec = row["y_spec"]
-            y_spec_padded[i, :, :spec.size(1)] = spec
-            y_spec_lengths[i] = spec.size(1)
-
             wav = row["y_wav"]
             y_wav_padded[i, :, :wav.size(1)] = wav
             y_wav_lengths[i] = wav.size(1)
 
+            spec = row["y_spec"]
+            y_spec_padded[i, :, :spec.size(1)] = spec
+            y_spec_lengths[i] = spec.size(1)
+
         ret = {
             "sid": sid,
             
-            "x_spec_values": x_spec_padded,
-            "x_spec_lengths": x_spec_lengths,
             "x_wav_values": x_wav_padded,
             "x_wav_lengths": x_wav_lengths,
-            "x_mel_values": x_mel_padded,
-            "x_mel_lengths": x_mel_lengths,
             "x_pitch_values": x_pitch_padded,
             "x_pitch_lengths": x_pitch_lengths,
 
