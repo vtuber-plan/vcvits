@@ -24,5 +24,5 @@ if __name__ == "__main__":
     with open(os.path.join(args.output, origin_filename.replace(".txt", "_valid.txt")), "w", encoding="utf-8") as f:
         f.writelines(lines[-20:-10])
     
-    with open(os.path.join(args.output, origin_filename.replace(".txt", "_text.txt")), "w", encoding="utf-8") as f:
+    with open(os.path.join(args.output, origin_filename.replace(".txt", "_test.txt")), "w", encoding="utf-8") as f:
         f.writelines(lines[-10:])
