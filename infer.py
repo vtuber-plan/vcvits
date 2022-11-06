@@ -11,8 +11,9 @@ from vits.data.audio import coarse_f0, estimate_pitch
 from vits.hparams import HParams
 from vits.model.preload_vcvits import PreloadVCVITS
 
-files = glob.glob("logs/lightning_logs/version_0/checkpoints/*.ckpt")
+files = glob.glob("logs/lightning_logs/version_*/checkpoints/*.ckpt")
 PATH = sorted(list(files))[-1]
+print(f"Loading....{PATH}")
 
 from vits.model.vcvits import VCVITS
 from vits.mel_processing import spec_to_mel_torch, mel_spectrogram_torch, spectrogram_torch
@@ -86,4 +87,4 @@ def convert(source_audio: str, target_audio: str, speaker_id: int, pitch_shift: 
 
     sf.write(target_audio, y_hat[0,:,:y_hat_lengths[0]].squeeze(0).detach().numpy(), hparams.data.target_sampling_rate, subtype='PCM_24')
 
-convert("External0_337.wav", 'out.wav', 145, 0)
+convert("External0_337.wav", 'out.wav', 143, 0)
