@@ -2,7 +2,7 @@
   "trainer": {
     "max_epochs": 20000,
     "limit_val_batches": 1,
-    "accumulate_grad_batches": 4,
+    "accumulate_grad_batches": 2,
     "default_root_dir": "./logs",
     "val_check_interval": 1000
   },
