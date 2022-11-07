@@ -17,13 +17,25 @@ class SpeechConversionAudioPipeline(torch.nn.Module):
         super().__init__()
         self.source_sampling_rate = source_sampling_rate
         self.device = device
+
+        self.pitch_delta = 5
+        pitch_shift_list = []
+        for i in range(0, self.pitch_delta):
+            delta = 2 * i + 1
+            for n_step in [-delta, delta]:
+                pitch_shift_list.append(
+                    T.PitchShift(self.source_sampling_rate, n_step)
+                )
+        self.pitch_shift_modules = nn.ModuleList(pitch_shift_list)
+        for m in self.pitch_shift_modules:
+            m.initialize_parameters(torch.tensor([0], dtype=torch.float, device=self.device))
+
     def forward(self, waveform: torch.Tensor) -> torch.Tensor:
         # transform
-        if random.random() < 0.3:
-            pitch_shift = 0
-            waveform_out = waveform
+        if random.random() <= 0.3:
+            spec = waveform
         else:
-            pitch_shift = random.randint(-12, 12)
-            waveform_out = torchaudio.functional.pitch_shift(waveform, self.source_sampling_rate, pitch_shift)
+            pitch_shift_index = random.choice(list(range(len(self.pitch_shift_modules))))
+            spec = self.pitch_shift_modules[pitch_shift_index](waveform)
 
-        return waveform_out
+        return spec

@@ -39,6 +39,8 @@ class VCVITS(pl.LightningModule):
         # self.net_pitch_d = PitchDiscriminator(self.hparams.model.use_spectral_norm)
 
         self.audio_pipeline = SpeechConversionAudioPipeline(self.hparams.data.source_sampling_rate, self.device)
+        for param in self.audio_pipeline.parameters():
+            param.requires_grad = False
 
     def training_step(self, batch: Dict[str, torch.Tensor], batch_idx: int, optimizer_idx: int):
         speakers = batch.get("sid", None)
@@ -47,14 +49,15 @@ class VCVITS(pl.LightningModule):
 
         y_wav, y_wav_lengths = batch["y_wav_values"], batch["y_wav_lengths"]
 
-        x_wav = self.audio_pipeline(x_wav)
-        
-        y_spec = spectrogram_torch_audio(y_wav.squeeze(1),
-            self.hparams.data.filter_length,
-            self.hparams.data.target_sampling_rate,
-            self.hparams.data.hop_length,
-            self.hparams.data.win_length, center=False)
-        y_spec_lengths = (y_wav_lengths / self.hparams.data.hop_length).long()
+        with torch.inference_mode():
+            x_wav = self.audio_pipeline(x_wav)
+            
+            y_spec = spectrogram_torch_audio(y_wav.squeeze(1),
+                self.hparams.data.filter_length,
+                self.hparams.data.target_sampling_rate,
+                self.hparams.data.hop_length,
+                self.hparams.data.win_length, center=False)
+            y_spec_lengths = (y_wav_lengths / self.hparams.data.hop_length).long()
 
         # generator forward
         y_hat, ids_slice, x_mask, z_mask, (z, z_p, m_p, logs_p, m_q, logs_q) = \
