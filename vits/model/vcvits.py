@@ -6,10 +6,13 @@ from torch import nn
 from torch.nn import functional as F
 from torch import optim
 import torchaudio
+import torchaudio.transforms as T
 
 import random
 
 import pytorch_lightning as pl
+
+from vits.model.pipeline import SpeechConversionAudioPipeline
 
 from .discriminators.multi_scale_discriminator import MultiScaleDiscriminator
 from .discriminators.multi_period_discriminator import MultiPeriodDiscriminator
@@ -35,6 +38,8 @@ class VCVITS(pl.LightningModule):
         self.net_scale_d = MultiScaleDiscriminator(self.hparams.model.use_spectral_norm)
         # self.net_pitch_d = PitchDiscriminator(self.hparams.model.use_spectral_norm)
 
+        self.audio_pipeline = SpeechConversionAudioPipeline(self.hparams.data.source_sampling_rate, self.device)
+
     def training_step(self, batch: Dict[str, torch.Tensor], batch_idx: int, optimizer_idx: int):
         speakers = batch.get("sid", None)
         x_wav, x_wav_lengths = batch["x_wav_values"], batch["x_wav_lengths"]
@@ -42,14 +47,7 @@ class VCVITS(pl.LightningModule):
 
         y_wav, y_wav_lengths = batch["y_wav_values"], batch["y_wav_lengths"]
 
-        # transform
-        if random.random() < 0.3:
-            pitch_shift = 0
-        else:
-            pitch_shift = random.randint(-12, 12)
-
-        if pitch_shift != 0:
-            x_wav = torchaudio.functional.pitch_shift(x_wav, self.hparams.data.source_sampling_rate, pitch_shift)
+        x_wav = self.audio_pipeline(x_wav)
         
         y_spec = spectrogram_torch_audio(y_wav.squeeze(1),
             self.hparams.data.filter_length,

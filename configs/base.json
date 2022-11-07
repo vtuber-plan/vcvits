@@ -2,7 +2,7 @@
   "trainer": {
     "max_epochs": 20000,
     "limit_val_batches": 1,
-    "accumulate_grad_batches": 2,
+    "accumulate_grad_batches": 1,
     "default_root_dir": "./logs",
     "val_check_interval": 1000
   },
@@ -46,11 +46,11 @@
     "hubert_ckpt": "checkpoints/hubert_xtralarge_ll60k.pt",
     "num_pitch": 512,
     "inter_channels": 256,
-    "hidden_channels": 512,
+    "hidden_channels": 256,
     "hubert_channels": 1280,
     "filter_channels": 768,
     "n_heads": 4,
-    "n_layers": 3,
+    "n_layers": 6,
     "kernel_size": 3,
     "p_dropout": 0.1,
     "resblock": "1",

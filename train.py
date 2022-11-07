@@ -18,6 +18,7 @@ from vits.data.collate import VoiceConversionMultiSpeakerCollate
 
 import pytorch_lightning as pl
 from pytorch_lightning.callbacks import ModelCheckpoint
+from pytorch_lightning.profiler import SimpleProfiler, AdvancedProfiler
 
 from vits.hparams import HParams
 from vits.data.dataset.vc_ms import VoiceConversionMultiSpeakerDataset
@@ -55,7 +56,7 @@ def main():
 
     # preprocess
     print("Preprocess...")
-    if True or args.skip_preprocess:
+    if args.skip_preprocess:
         print("skip preprocessing..")
     else:
         Parallel(n_jobs=64, backend="loky")\
@@ -66,7 +67,7 @@ def main():
             pass
         
     collate_fn = VoiceConversionMultiSpeakerCollate()
-    train_loader = DataLoader(train_dataset, batch_size=hparams.train.batch_size, num_workers=0, shuffle=True, pin_memory=True, collate_fn=collate_fn)
+    train_loader = DataLoader(train_dataset, batch_size=hparams.train.batch_size, num_workers=16, shuffle=True, pin_memory=True, collate_fn=collate_fn)
     valid_loader = DataLoader(valid_dataset, batch_size=1, num_workers=16, shuffle=False, pin_memory=True, collate_fn=collate_fn)
 
     model = VCVITS(**hparams)
@@ -91,7 +92,9 @@ def main():
         trainer_params["amp_backend"] = "native"
         trainer_params["precision"] = 16
     
-    trainer = pl.Trainer(**trainer_params)
+    # profiler = AdvancedProfiler(filename="profile.txt")
+    
+    trainer = pl.Trainer(**trainer_params) # , profiler=profiler, max_steps=200
     # resume training
     ckpt_path = None
     if os.path.exists("logs/lightning_logs"):

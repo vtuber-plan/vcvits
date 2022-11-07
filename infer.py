@@ -37,20 +37,23 @@ hparams = model.hparams
 def get_audio(hparams, filename: str, sr = None, pitch_shift: int = 0):
     audio, sampling_rate = load_wav_to_torch(filename)
 
-    if pitch_shift != 0:
-        audio = torchaudio.functional.pitch_shift(audio, sampling_rate, pitch_shift)
-    
     if sr is not None and sampling_rate != sr:
         # not match, then resample
         resampler = torchaudio.transforms.Resample(orig_freq=sampling_rate, new_freq=sr)
         audio = resampler(audio)
         sampling_rate = sr
+    
+    if pitch_shift != 0:
+        shifted_audio = torchaudio.functional.pitch_shift(audio, sampling_rate, pitch_shift)
+    else:
+        shifted_audio = audio
 
+    shifted_audio_norm = shifted_audio.unsqueeze(0)
     audio_norm = audio.unsqueeze(0)
 
     # load pitch
     pitch_mel = estimate_pitch(
-        audio=audio.numpy(), sr=sampling_rate, n_fft=hparams.filter_length,
+        audio=shifted_audio.numpy(), sr=sampling_rate, n_fft=hparams.filter_length,
         win_length=hparams.win_length, hop_length=320, method='pyin',
         normalize_mean=None, normalize_std=None, n_formants=1)
     
@@ -87,4 +90,4 @@ def convert(source_audio: str, target_audio: str, speaker_id: int, pitch_shift: 
 
     sf.write(target_audio, y_hat[0,:,:y_hat_lengths[0]].squeeze(0).detach().numpy(), hparams.data.target_sampling_rate, subtype='PCM_24')
 
-convert("External0_337.wav", 'out.wav', 143, 0)
+convert("dataset/example/paimoon/1001_68.wav", 'out.wav', 148, -6)
