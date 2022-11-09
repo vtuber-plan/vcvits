@@ -14,6 +14,8 @@ from scipy.io.wavfile import read
 from librosa.filters import mel as librosa_mel_fn
 import torchaudio
 
+import logging
+
 MAX_WAV_VALUE = 32768.0
 
 
@@ -51,9 +53,9 @@ hann_window = {}
 
 def spectrogram_torch(y, n_fft: int, sampling_rate: int, hop_size: int, win_size: int, center: bool=False):
     if torch.min(y) < -1.:
-        print('min value is ', torch.min(y))
+        logging.warning(f'min value is {torch.min(y).detach().cpu().item()}')
     if torch.max(y) > 1.:
-        print('max value is ', torch.max(y))
+        logging.warning(f'max value is {torch.max(y).detach().cpu().item()}')
 
     global hann_window
     dtype_device = str(y.dtype) + '_' + str(y.device)
@@ -73,9 +75,9 @@ def spectrogram_torch(y, n_fft: int, sampling_rate: int, hop_size: int, win_size
 
 def spectrogram_torch_audio(y, n_fft: int, sampling_rate: int, hop_size: int, win_size: int, center: bool=False):
     if torch.min(y) < -1.:
-        print('min value is ', torch.min(y))
+        logging.warning(f'min value is {torch.min(y).detach().cpu().item()}')
     if torch.max(y) > 1.:
-        print('max value is ', torch.max(y))
+        logging.warning(f'max value is {torch.max(y).detach().cpu().item()}')
 
     global hann_window
     dtype_device = str(y.dtype) + '_' + str(y.device)
@@ -87,7 +89,7 @@ def spectrogram_torch_audio(y, n_fft: int, sampling_rate: int, hop_size: int, wi
 
     spec = torchaudio.functional.spectrogram(y, pad, hann_window[wnsize_dtype_device],
             n_fft, hop_size, win_size, None,
-            center=center, pad_mode='reflect', normalized=False, onesided=True, return_complex=True)
+            center=center, pad_mode='reflect', normalized=False, onesided=True)
     
     spec = torch.sqrt(spec.real.pow(2) + spec.imag.pow(2) + 1e-6)
 
@@ -107,9 +109,9 @@ def spec_to_mel_torch(spec, n_fft, num_mels, sampling_rate, fmin, fmax):
 
 def mel_spectrogram_torch(y, n_fft: int, num_mels: int, sampling_rate: int, hop_size: int, win_size: int, fmin: int, fmax: int, center: bool=False):
     if torch.min(y) < -1.:
-        print('min value is ', torch.min(y))
+        logging.warning(f'min value is {torch.min(y).detach().cpu().item()}')
     if torch.max(y) > 1.:
-        print('max value is ', torch.max(y))
+        logging.warning(f'max value is {torch.max(y).detach().cpu().item()}')
 
     global mel_basis, hann_window
     dtype_device = str(y.dtype) + '_' + str(y.device)

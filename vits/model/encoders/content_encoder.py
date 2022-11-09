@@ -34,12 +34,12 @@ class HubertContentEncoder(nn.Module):
         for param in self.hubert.parameters():
             param.requires_grad = False
 
-        proj_channels = hidden_channels // 2
+        proj_channels = hidden_channels
         
         self.hubert_proj = nn.Linear(hubert_channels, proj_channels)
         self.emb_pitch = nn.Embedding(num_pitch, proj_channels)
         nn.init.normal_(self.emb_pitch.weight, 0.0, proj_channels ** -0.5)
-        self.pitch_proj = nn.Linear(proj_channels, proj_channels)
+        # self.pitch_proj = nn.Linear(proj_channels, proj_channels)
         
         self.encoder = TransformerEncoder(
             hidden_channels,
@@ -58,9 +58,9 @@ class HubertContentEncoder(nn.Module):
         hubert_out = self.hubert_proj(x_encoded.transpose(1, -1)).transpose(1, -1)
         
         pitch_embeddings = self.emb_pitch(pitch).transpose(1, -1)
-        pitch_out = self.pitch_proj(pitch_embeddings.transpose(1, -1)).transpose(1, -1)
+        pitch_out = pitch_embeddings
 
-        out = torch.concat((hubert_out, pitch_out), dim=1)
+        out = hubert_out + pitch_out
 
         # n_downsample = self.hubert.feature_extractor.downsample_num
         x_mask = torch.unsqueeze(commons.sequence_mask(x_lengths.int(), out.size(2)), 1).to(x.dtype)

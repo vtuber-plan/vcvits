@@ -24,7 +24,7 @@ from vits.utils import load_wav_to_torch, load_filepaths_and_text
 import torchaudio
 
 if torch.cuda.is_available():
-    device = "cuda"
+    device = "cuda:3"
 else:
     device = "cpu"
 
@@ -81,13 +81,14 @@ def convert(source_audio: str, target_audio: str, speaker_id: int, pitch_shift: 
     
     len_scale = (hparams.data.target_sampling_rate / hparams.data.hop_length) / hparams.data.source_sampling_rate
     sid = torch.tensor([speaker_id], dtype=torch.long).to(device)
-    y_hat, mask, (z, z_p, m_p, logs_p) = model.net_g.infer(
-            x_wav, x_wav_lengths, x_pitch, x_pitch_lengths,
-            sid=sid, length_scale=len_scale, max_len=1000)
+    with torch.inference_mode():
+        y_hat, mask, (z, z_p, m_p, logs_p) = model.net_g.infer(
+                x_wav, x_wav_lengths, x_pitch, x_pitch_lengths,
+                sid=sid, length_scale=len_scale, max_len=2000)
     y_hat_lengths = mask.sum([1,2]).long() * model.hparams.data.hop_length
 
     y_hat = y_hat.to("cpu")
 
     sf.write(target_audio, y_hat[0,:,:y_hat_lengths[0]].squeeze(0).detach().numpy(), hparams.data.target_sampling_rate, subtype='PCM_24')
 
-convert("dataset/example/paimoon/1001_68.wav", 'out.wav', 148, -6)
+convert("whzjscs_input.wav", 'out.wav', 143, 0)

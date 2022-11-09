@@ -19,8 +19,7 @@ class Generator(torch.nn.Module):
                     resblock_dilation_sizes: List[int],
                     upsample_rates: List[int],
                     upsample_initial_channel: int,
-                    upsample_kernel_sizes: List[int],
-                    gin_channels: int=0):
+                    upsample_kernel_sizes: List[int]):
         super(Generator, self).__init__()
         self.num_kernels = len(resblock_kernel_sizes)
         self.num_upsamples = len(upsample_rates)
@@ -47,13 +46,13 @@ class Generator(torch.nn.Module):
         self.conv_post = Conv1d(ch, 1, 7, 1, padding=3, bias=False)
         self.ups.apply(init_weights)
 
-        if gin_channels != 0:
-            self.cond = nn.Conv1d(gin_channels, upsample_initial_channel, 1)
+        # if gin_channels != 0:
+        #     self.cond = nn.Conv1d(gin_channels, upsample_initial_channel, 1)
 
-    def forward(self, x, g=None):
+    def forward(self, x):
         x = self.conv_pre(x)
-        if g is not None:
-          x = x + self.cond(g)
+        # if g is not None:
+        #   x = x + self.cond(g)
 
         for i in range(self.num_upsamples):
             x = F.leaky_relu(x, modules.LRELU_SLOPE)
