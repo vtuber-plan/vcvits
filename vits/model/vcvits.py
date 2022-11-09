@@ -1,6 +1,7 @@
 
 import itertools
-from typing import Dict
+import logging
+from typing import Any, Dict
 import torch
 from torch import nn
 from torch.nn import functional as F
@@ -244,3 +245,22 @@ class VCVITS(pl.LightningModule):
         self.scheduler_d.last_epoch = self.current_epoch - 1
 
         return [self.optim_g, self.optim_d], [self.scheduler_g, self.scheduler_d]
+    
+    def on_load_checkpoint(self, checkpoint: Dict[str, Any]) -> None:
+        state_dict = checkpoint["state_dict"]
+        model_state_dict = self.state_dict()
+        is_changed = False
+        for k in state_dict:
+            if k in model_state_dict:
+                if state_dict[k].shape != model_state_dict[k].shape:
+                    logging.info(f"Skip loading parameter: {k}, "
+                                f"required shape: {model_state_dict[k].shape}, "
+                                f"loaded shape: {state_dict[k].shape}")
+                    state_dict[k] = model_state_dict[k]
+                    is_changed = True
+            else:
+                logging.info(f"Dropping parameter {k}")
+                is_changed = True
+
+        if is_changed:
+            checkpoint.pop("optimizer_states", None)

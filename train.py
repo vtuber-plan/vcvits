@@ -71,6 +71,7 @@ def main():
     valid_loader = DataLoader(valid_dataset, batch_size=1, num_workers=16, shuffle=False, pin_memory=True, collate_fn=collate_fn)
 
     model = VCVITS(**hparams)
+    # model = VCVITS.load_from_checkpoint(checkpoint_path="logs/lightning_logs/ver_0/checkpoints/last.ckpt", strict=False)
 
     checkpoint_callback = ModelCheckpoint(dirpath=None, save_last=True, every_n_train_steps=500)
 
