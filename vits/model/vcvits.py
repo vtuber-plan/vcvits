@@ -61,31 +61,12 @@ class VCVITS(pl.LightningModule):
             y_spec_lengths = (y_wav_lengths / self.hparams.data.hop_length).long()
 
         # generator forward
-        y_hat, ids_slice, x_mask, z_mask, (z, z_p, m_p, logs_p, m_q, logs_q) = \
+        y_hat, ids_slice, z_slice, x_mask, z_mask, (z, z_p, m_p, logs_p, m_q, logs_q) = \
             self.net_g(x_wav, x_wav_lengths, x_pitch, x_pitch_lengths, y_spec, y_spec_lengths, sid=speakers)
         y = commons.slice_segments(y_wav, ids_slice * self.hparams.data.hop_length, self.hparams.train.segment_size) # slice 
 
         # Generator
         if optimizer_idx == 0:
-            mel = spec_to_mel_torch(
-                y_spec, 
-                self.hparams.data.filter_length, 
-                self.hparams.data.n_mel_channels, 
-                self.hparams.data.target_sampling_rate,
-                self.hparams.data.mel_fmin, 
-                self.hparams.data.mel_fmax)
-            y_mel = commons.slice_segments(mel, ids_slice, self.hparams.train.segment_size // self.hparams.data.hop_length)
-            y_hat_mel = mel_spectrogram_torch(
-                y_hat.squeeze(1), 
-                self.hparams.data.filter_length, 
-                self.hparams.data.n_mel_channels, 
-                self.hparams.data.target_sampling_rate, 
-                self.hparams.data.hop_length, 
-                self.hparams.data.win_length, 
-                self.hparams.data.mel_fmin, 
-                self.hparams.data.mel_fmax
-            )
-
             y_dp_hat_r, y_dp_hat_g, fmap_p_r, fmap_p_g = self.net_period_d(y, y_hat)
             loss_p_fm = feature_loss(fmap_p_r, fmap_p_g)
             loss_p_gen, losses_p_gen = generator_loss(y_dp_hat_g)
@@ -94,12 +75,39 @@ class VCVITS(pl.LightningModule):
             loss_s_fm = feature_loss(fmap_s_r, fmap_s_g)
             loss_s_gen, losses_s_gen = generator_loss(y_ds_hat_g)
 
+            y_spec_slice = commons.slice_segments(y_spec, ids_slice, self.hparams.train.segment_size // self.hparams.data.hop_length)
+
+            y_spec_hat = spectrogram_torch_audio(y_hat,
+                self.hparams.data.filter_length,
+                self.hparams.data.target_sampling_rate,
+                self.hparams.data.hop_length,
+                self.hparams.data.win_length, center=False).squeeze(1)
+            
+            y_mel_hat = spec_to_mel_torch(
+                y_spec_hat, 
+                self.hparams.data.filter_length, 
+                self.hparams.data.n_mel_channels, 
+                self.hparams.data.target_sampling_rate,
+                self.hparams.data.mel_fmin, 
+                self.hparams.data.mel_fmax)
+            
+            mel = spec_to_mel_torch(
+                y_spec, 
+                self.hparams.data.filter_length, 
+                self.hparams.data.n_mel_channels, 
+                self.hparams.data.target_sampling_rate,
+                self.hparams.data.mel_fmin, 
+                self.hparams.data.mel_fmax)
+            y_mel_slice = commons.slice_segments(mel, ids_slice, self.hparams.train.segment_size // self.hparams.data.hop_length)
+
             # kl
             loss_kl = kl_loss(z_p, logs_q, m_p, logs_p, z_mask) * self.hparams.train.c_kl
-            # mel
-            loss_mel = F.l1_loss(y_mel, y_hat_mel) * self.hparams.train.c_mel
+            # spec
+            loss_spec = F.l1_loss(y_spec_hat, y_spec_slice) * self.hparams.train.c_spec
+            # spec
+            loss_mel = F.l1_loss(y_mel_hat, y_mel_slice) * self.hparams.train.c_spec
 
-            loss_gen_all = (loss_s_gen + loss_s_fm) + (loss_p_gen + loss_p_fm) + loss_mel + loss_kl
+            loss_gen_all = (loss_s_gen + loss_s_fm) + (loss_p_gen + loss_p_fm) + loss_spec + loss_mel + loss_kl
 
             grad_norm_g = commons.clip_grad_value_(self.net_g.parameters(), None)
 
@@ -111,17 +119,18 @@ class VCVITS(pl.LightningModule):
                 "loss/g/s_fm": loss_s_fm,
                 "loss/g/p_gen": loss_p_gen,
                 "loss/g/s_gen": loss_s_gen,
-                "loss/g/mel": loss_mel,
+                "loss/g/loss_mel": loss_mel,
             })
 
             # scalar_dict.update({"loss/g/p_gen_{}".format(i): v for i, v in enumerate(losses_p_gen)})
             # scalar_dict.update({"loss/g/s_gen_{}".format(i): v for i, v in enumerate(losses_s_gen)})
 
-            image_dict = { 
-                "slice/mel_org": utils.plot_spectrogram_to_numpy(y_mel[0].data.cpu().numpy()),
-                "slice/mel_gen": utils.plot_spectrogram_to_numpy(y_hat_mel[0].data.cpu().numpy()), 
-                "all/mel": utils.plot_spectrogram_to_numpy(mel[0].data.cpu().numpy())
-            }
+            # image_dict = { 
+            #     "slice/mel_org": utils.plot_spectrogram_to_numpy(y_mel[0].data.cpu().numpy()),
+            #     "slice/mel_gen": utils.plot_spectrogram_to_numpy(y_hat_mel[0].data.cpu().numpy()), 
+            #     "all/mel": utils.plot_spectrogram_to_numpy(mel[0].data.cpu().numpy())
+            # }
+            image_dict = {}
             
             tensorboard = self.logger.experiment
             utils.summarize(

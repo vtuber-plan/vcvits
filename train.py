@@ -73,7 +73,7 @@ def main():
     model = VCVITS(**hparams)
     # model = VCVITS.load_from_checkpoint(checkpoint_path="logs/lightning_logs/ver_0/checkpoints/last.ckpt", strict=False)
 
-    checkpoint_callback = ModelCheckpoint(dirpath=None, save_last=True, every_n_train_steps=500)
+    checkpoint_callback = ModelCheckpoint(dirpath=None, save_last=True, every_n_train_steps=5000)
 
     devices = [int(n.strip()) for n in args.device.split(",")]
     trainer_params = {

@@ -102,7 +102,12 @@ def spec_to_mel_torch(spec, n_fft, num_mels, sampling_rate, fmin, fmax):
     if fmax_dtype_device not in mel_basis:
         mel = librosa_mel_fn(sr=sampling_rate, n_fft=n_fft, n_mels=num_mels, fmin=fmin, fmax=fmax)
         mel_basis[fmax_dtype_device] = torch.from_numpy(mel).to(dtype=spec.dtype, device=spec.device)
-    spec = torch.matmul(mel_basis[fmax_dtype_device], spec)
+
+    if len(spec.shape) == 3:
+        mel_matrix = mel_basis[fmax_dtype_device].unsqueeze(0)
+    else:
+        mel_matrix = mel_basis[fmax_dtype_device]
+    spec = torch.matmul(mel_matrix, spec)
     spec = spectral_normalize_torch(spec)
     return spec
 

@@ -14,15 +14,14 @@
     "learning_rate": 2e-4,
     "betas": [0.8, 0.99],
     "eps": 1e-9,
-    "batch_size": 4,
+    "batch_size": 8,
     "fp16_run": true,
     "lr_decay": 0.999875,
     "segment_size": 16384,
     "init_lr_ratio": 1,
     "warmup_epochs": 0,
-    "c_mel": 45,
-    "c_kl": 1,
-    "c_dur": 1
+    "c_spec": 45,
+    "c_kl": 1
   },
   "data": {
     "training_files": "filelists/example_audio_filelist_train.txt",
@@ -33,7 +32,7 @@
     "filter_length": 2048,
     "hop_length": 512,
     "win_length": 2048,
-    "n_mel_channels": 128,
+    "n_mel_channels": 256,
     "mel_fmin": 0.0,
     "mel_fmax": null,
     "n_speakers": 512,

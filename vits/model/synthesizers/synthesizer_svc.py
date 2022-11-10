@@ -91,7 +91,7 @@ class SynthesizerSVC(nn.Module):
 
         z_slice, ids_slice = commons.rand_slice_segments(z, y_spec_lengths, self.segment_size)
         o = self.dec(z_slice)
-        return o, ids_slice, x_mask, y_mask, (z, z_p, m_p, logs_p, m_q, logs_q)
+        return o, ids_slice, z_slice, x_mask, y_mask, (z, z_p, m_p, logs_p, m_q, logs_q)
 
     def infer(self, x, x_lengths, x_pitch, x_pitch_lengths, sid=None, noise_scale=1, length_scale=1, noise_scale_w=1., max_len=None):
         x, m_p, logs_p, x_mask = self.enc_p(x, x_lengths, x_pitch, x_pitch_lengths)
