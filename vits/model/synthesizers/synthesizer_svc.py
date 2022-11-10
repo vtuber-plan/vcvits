@@ -69,7 +69,6 @@ class SynthesizerSVC(nn.Module):
 
         # self.duration_predictor = DurationPredictor(hidden_channels, 256, 3, 0.5, gin_channels=gin_channels)
         # self.duration_predictor = StochasticDurationPredictor(hidden_channels, 192, 3, 0.5, 4, gin_channels=gin_channels)
-
         if n_speakers >= 1:
             self.emb_g = nn.Embedding(n_speakers, gin_channels)
 

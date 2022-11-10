@@ -38,6 +38,7 @@ class VCVITS(pl.LightningModule):
         self.net_period_d = MultiPeriodDiscriminator(self.hparams.model.use_spectral_norm)
         self.net_scale_d = MultiScaleDiscriminator(self.hparams.model.use_spectral_norm)
         # self.net_pitch_d = PitchDiscriminator(self.hparams.model.use_spectral_norm)
+        # speaker discriminator
 
         self.audio_pipeline = SpeechConversionAudioPipeline(self.hparams.data.source_sampling_rate, self.device)
         for param in self.audio_pipeline.parameters():
@@ -102,12 +103,12 @@ class VCVITS(pl.LightningModule):
 
             # kl
             loss_kl = kl_loss(z_p, logs_q, m_p, logs_p, z_mask) * self.hparams.train.c_kl
-            # spec
-            loss_spec = F.l1_loss(y_spec_hat, y_spec_slice) * self.hparams.train.c_spec
-            # spec
-            loss_mel = F.l1_loss(y_mel_hat, y_mel_slice) * self.hparams.train.c_spec
+            # mel
+            loss_mel = F.l1_loss(y_mel_hat, y_mel_slice) * self.hparams.train.c_mel
+            # zmel
+            # loss_zmel = F.l1_loss(z_slice, y_mel_slice)
 
-            loss_gen_all = (loss_s_gen + loss_s_fm) + (loss_p_gen + loss_p_fm) + loss_spec + loss_mel + loss_kl
+            loss_gen_all = (loss_s_gen + loss_s_fm) + (loss_p_gen + loss_p_fm) + loss_mel + loss_kl
 
             grad_norm_g = commons.clip_grad_value_(self.net_g.parameters(), None)
 

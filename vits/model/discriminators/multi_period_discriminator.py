@@ -14,7 +14,7 @@ class MultiPeriodDiscriminator(torch.nn.Module):
         discs = discs + [DiscriminatorP(i, use_spectral_norm=use_spectral_norm) for i in periods]
         self.discriminators = nn.ModuleList(discs)
 
-    def forward(self, y, y_hat):
+    def forward(self, y, y_hat, g=None):
         y_d_rs = []
         y_d_gs = []
         fmap_rs = []
