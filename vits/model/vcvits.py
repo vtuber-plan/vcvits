@@ -106,7 +106,7 @@ class VCVITS(pl.LightningModule):
             # spec
             # loss_spec = F.l1_loss(y_spec_hat, y_spec_slice) * self.hparams.train.c_mel
             # mel
-            loss_mel = F.mse_loss(y_mel_hat, y_mel_slice) * self.hparams.train.c_mel
+            loss_mel = F.l1_loss(y_mel_hat, y_mel_slice) * self.hparams.train.c_mel
 
             loss_gen_all = (loss_s_gen + loss_s_fm) + (loss_p_gen + loss_p_fm) + loss_mel + loss_kl
 

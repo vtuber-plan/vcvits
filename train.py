@@ -10,7 +10,6 @@ from torch import nn, optim
 from torch.nn import functional as F
 from torch.utils.data import DataLoader
 from vits.preprocess import preprocess
-from vits.model.preload_vcvits import PreloadVCVITS
 from vits.model.vcvits import VCVITS
 
 import vits.utils as utils
