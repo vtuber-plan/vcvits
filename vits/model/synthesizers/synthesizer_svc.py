@@ -57,6 +57,8 @@ class SynthesizerSVC(nn.Module):
         self.enc_p = HubertContentEncoder(kwargs["hubert_ckpt"], inter_channels, hidden_channels, filter_channels,
                                 n_heads, n_layers, kernel_size, p_dropout, hubert_channels, num_pitch)
         self.dec = torch.hub.load("vtuber-plan/hifi-gan:main", "hifigan_48k")
+        for param in self.dec.parameters():
+            param.requires_grad = False
         self.enc_q = PosteriorEncoder(spec_channels, inter_channels, hidden_channels, 5, 1, 16, gin_channels=gin_channels)
         self.flow = ResidualCouplingBlock(inter_channels, hidden_channels, 5, 1, 4, gin_channels=gin_channels)
 

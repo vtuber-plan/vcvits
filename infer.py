@@ -9,7 +9,6 @@ import os
 import fairseq
 from vits.data.audio import coarse_f0, estimate_pitch
 from vits.hparams import HParams
-from vits.model.preload_vcvits import PreloadVCVITS
 
 files = glob.glob("logs/lightning_logs/version_*/checkpoints/*.ckpt")
 PATH = sorted(list(files))[-1]
@@ -24,7 +23,7 @@ from vits.utils import load_wav_to_torch, load_filepaths_and_text
 import torchaudio
 
 if torch.cuda.is_available():
-    device = "cuda:3"
+    device = "cuda:5"
 else:
     device = "cpu"
 
@@ -91,4 +90,4 @@ def convert(source_audio: str, target_audio: str, speaker_id: int, pitch_shift: 
 
     sf.write(target_audio, y_hat[0,:,:y_hat_lengths[0]].squeeze(0).detach().numpy(), hparams.data.target_sampling_rate, subtype='PCM_24')
 
-convert("whzjscs_input.wav", 'out.wav', 256, 0)
+convert("ncwlq_01.wav", 'out.wav', 256, 0)
