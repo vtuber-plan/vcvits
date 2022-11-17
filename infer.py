@@ -90,4 +90,4 @@ def convert(source_audio: str, target_audio: str, speaker_id: int, pitch_shift: 
 
     sf.write(target_audio, y_hat[0,:,:y_hat_lengths[0]].squeeze(0).detach().numpy(), hparams.data.target_sampling_rate, subtype='PCM_24')
 
-convert("ncwlq_01.wav", 'out.wav', 256, 0)
+convert("ncwlq_01.wav", 'out.wav', 143, 0)

@@ -61,8 +61,16 @@ class VCVITS(pl.LightningModule):
                 self.hparams.data.win_length, center=False)
             y_spec_lengths = (y_wav_lengths / self.hparams.data.hop_length).long()
 
+            y_mel = spec_to_mel_torch(
+                y_spec, 
+                self.hparams.data.filter_length, 
+                self.hparams.data.n_mel_channels, 
+                self.hparams.data.target_sampling_rate,
+                self.hparams.data.mel_fmin, 
+                self.hparams.data.mel_fmax)
+
         # generator forward
-        y_hat, ids_slice, z_slice, x_mask, z_mask, (z, z_p, m_p, logs_p, m_q, logs_q) = \
+        y_hat, ids_slice, x_mask, z_mask, (z, z_p, m_p, logs_p, m_q, logs_q) = \
             self.net_g(x_wav, x_wav_lengths, x_pitch, x_pitch_lengths, y_spec, y_spec_lengths, sid=speakers)
         y = commons.slice_segments(y_wav, ids_slice * self.hparams.data.hop_length, self.hparams.train.segment_size) # slice 
 
@@ -76,7 +84,7 @@ class VCVITS(pl.LightningModule):
             loss_s_fm = feature_loss(fmap_s_r, fmap_s_g)
             loss_s_gen, losses_s_gen = generator_loss(y_ds_hat_g)
 
-            y_spec_slice = commons.slice_segments(y_spec, ids_slice, self.hparams.train.segment_size // self.hparams.data.hop_length)
+            # y_spec_slice = commons.slice_segments(y_spec, ids_slice, self.hparams.train.segment_size // self.hparams.data.hop_length)
 
             y_spec_hat = spectrogram_torch_audio(y_hat,
                 self.hparams.data.filter_length,
@@ -92,19 +100,10 @@ class VCVITS(pl.LightningModule):
                 self.hparams.data.mel_fmin, 
                 self.hparams.data.mel_fmax)
             
-            mel = spec_to_mel_torch(
-                y_spec, 
-                self.hparams.data.filter_length, 
-                self.hparams.data.n_mel_channels, 
-                self.hparams.data.target_sampling_rate,
-                self.hparams.data.mel_fmin, 
-                self.hparams.data.mel_fmax)
-            y_mel_slice = commons.slice_segments(mel, ids_slice, self.hparams.train.segment_size // self.hparams.data.hop_length)
+            y_mel_slice = commons.slice_segments(y_mel, ids_slice, self.hparams.train.segment_size // self.hparams.data.hop_length)
 
             # kl
             loss_kl = kl_loss(z_p, logs_q, m_p, logs_p, z_mask) * self.hparams.train.c_kl
-            # spec
-            # loss_spec = F.l1_loss(y_spec_hat, y_spec_slice) * self.hparams.train.c_mel
             # mel
             loss_mel = F.l1_loss(y_mel_hat, y_mel_slice) * self.hparams.train.c_mel
 
