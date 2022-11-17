@@ -56,9 +56,9 @@ class SynthesizerSVC(nn.Module):
 
         self.enc_p = HubertContentEncoder(kwargs["hubert_ckpt"], inter_channels, hidden_channels, filter_channels,
                                 n_heads, n_layers, kernel_size, p_dropout, hubert_channels, num_pitch)
-        self.dec = torch.hub.load("vtuber-plan/hifi-gan:main", "hifigan_48k", force_reload=True)
-        for param in self.dec.parameters():
-            param.requires_grad = False
+        self.dec = torch.hub.load("vtuber-plan/hifi-gan:main", "hifigan_48k")
+        # for param in self.dec.parameters():
+        #     param.requires_grad = False
         self.enc_q = PosteriorEncoder(spec_channels, inter_channels, hidden_channels, 5, 1, 16, gin_channels=gin_channels)
         self.flow = ResidualCouplingBlock(inter_channels, hidden_channels, 5, 1, 4, gin_channels=gin_channels)
 
@@ -80,8 +80,8 @@ class SynthesizerSVC(nn.Module):
         z, m_q, logs_q, y_mask = self.enc_q(y_spec, y_spec_lengths, g=g)
         z_p = self.flow(z, y_mask, g=g)
 
-        m_p = F.interpolate(m_p, size=(y_spec.shape[2],), mode="linear")
-        logs_p = F.interpolate(logs_p, size=(y_spec.shape[2],), mode="linear")
+        m_p = F.interpolate(m_p, size=(y_spec.shape[2],), mode="nearest")
+        logs_p = F.interpolate(logs_p, size=(y_spec.shape[2],), mode="nearest")
 
         z_slice, ids_slice = commons.rand_slice_segments(z, y_spec_lengths, self.segment_size)
         o = self.dec(z_slice)
@@ -98,8 +98,8 @@ class SynthesizerSVC(nn.Module):
         y_mask = torch.unsqueeze(commons.sequence_mask(y_lengths, None), 1).to(x_mask.dtype)
 
         y_max_len = torch.max(y_lengths).item()
-        m_p = F.interpolate(m_p, size=(y_max_len,), mode="linear")
-        logs_p = F.interpolate(logs_p, size=(y_max_len,), mode="linear")
+        m_p = F.interpolate(m_p, size=(y_max_len,), mode="nearest")
+        logs_p = F.interpolate(logs_p, size=(y_max_len,), mode="nearest")
 
         z_p = m_p + torch.randn_like(m_p) * torch.exp(logs_p) * noise_scale
         z = self.flow(z_p, y_mask, g=g, reverse=True)

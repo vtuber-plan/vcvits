@@ -23,7 +23,7 @@ from vits.utils import load_wav_to_torch, load_filepaths_and_text
 import torchaudio
 
 if torch.cuda.is_available():
-    device = "cuda:5"
+    device = "cuda:6"
 else:
     device = "cpu"
 
