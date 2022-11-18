@@ -70,7 +70,7 @@ class VCVITS(pl.LightningModule):
                 self.hparams.data.mel_fmax)
 
         # generator forward
-        y_hat, ids_slice, x_mask, z_mask, (z, z_p, m_p, logs_p, m_q, logs_q) = \
+        y_hat, ids_slice, z_slice, x_mask, z_mask, (z, z_p, m_p, logs_p, m_q, logs_q) = \
             self.net_g(x_wav, x_wav_lengths, x_pitch, x_pitch_lengths, y_spec, y_spec_lengths, sid=speakers)
         y = commons.slice_segments(y_wav, ids_slice * self.hparams.data.hop_length, self.hparams.train.segment_size) # slice 
 
@@ -105,7 +105,7 @@ class VCVITS(pl.LightningModule):
             # kl
             loss_kl = kl_loss(z_p, logs_q, m_p, logs_p, z_mask) * self.hparams.train.c_kl
             # mel
-            loss_mel = F.l1_loss(y_mel_hat, y_mel_slice) * self.hparams.train.c_mel
+            loss_mel = F.l1_loss(z_slice, y_mel_slice) * self.hparams.train.c_mel
 
             loss_gen_all = (loss_s_gen + loss_s_fm) + (loss_p_gen + loss_p_fm) + loss_mel + loss_kl
 
@@ -236,7 +236,7 @@ class VCVITS(pl.LightningModule):
             images=image_dict,
             audios=audio_dict,
             audio_sampling_rate=self.hparams.data.target_sampling_rate)
-
+    
     def configure_optimizers(self):
         self.optim_g = torch.optim.AdamW(
             self.net_g.parameters(), 
