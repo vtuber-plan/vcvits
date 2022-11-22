@@ -56,7 +56,7 @@ class SynthesizerSVC(nn.Module):
 
         self.enc_p = HubertContentEncoder(kwargs["hubert_ckpt"], inter_channels, hidden_channels, filter_channels,
                                 n_heads, n_layers, kernel_size, p_dropout, hubert_channels, num_pitch)
-        self.dec = torch.hub.load("vtuber-plan/hifi-gan:main", "hifigan_48k")
+        self.dec = torch.hub.load("vtuber-plan/hifi-gan:v0.3.0", "hifigan_48k")
         for param in self.dec.parameters():
             param.requires_grad = False
         self.enc_q = PosteriorEncoder(spec_channels, inter_channels, hidden_channels, 5, 1, 16, gin_channels=gin_channels)
@@ -103,6 +103,8 @@ class SynthesizerSVC(nn.Module):
 
         z_p = m_p + torch.randn_like(m_p) * torch.exp(logs_p) * noise_scale
         z = self.flow(z_p, y_mask, g=g, reverse=True)
+
+        # Up dim to march vocoder
         o = self.dec((z * y_mask)[:, :, :max_len])
         return o, y_mask, (z, z_p, m_p, logs_p)
 

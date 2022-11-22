@@ -40,7 +40,11 @@ class VCVITS(pl.LightningModule):
         # self.net_pitch_d = PitchDiscriminator(self.hparams.model.use_spectral_norm)
         # speaker discriminator
 
-        self.audio_pipeline = SpeechConversionAudioPipeline(self.hparams.data.source_sampling_rate, self.device)
+        self.audio_pipeline = SpeechConversionAudioPipeline(sr=self.hparams.data.source_sampling_rate,
+                                            n_fft=self.hparams.data.filter_length,
+                                            n_mel=self.hparams.data.n_mel_channels,
+                                            win_length=self.hparams.data.win_length,
+                                            hop_length=self.hparams.data.hop_length)
         for param in self.audio_pipeline.parameters():
             param.requires_grad = False
 

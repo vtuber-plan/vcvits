@@ -79,7 +79,6 @@ def get_timing_signal_1d(
   signal = signal.view(1, channels, length)
   return signal
 
-
 def add_timing_signal_1d(x, min_timescale=1.0, max_timescale=1.0e4):
   b, channels, length = x.size()
   signal = get_timing_signal_1d(length, channels, min_timescale, max_timescale)
