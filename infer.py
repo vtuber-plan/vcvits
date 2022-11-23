@@ -62,7 +62,7 @@ def get_audio(hparams, filename: str, sr = None, pitch_shift: int = 0):
     return audio_norm, pitch_mel
 
 def convert(source_audio: str, target_audio: str, speaker_id: int, pitch_shift: int):
-    with open("configs/base.json", "r") as f:
+    with open("configs/48k_base.json", "r") as f:
         data = f.read()
     config = json.loads(data)
     
