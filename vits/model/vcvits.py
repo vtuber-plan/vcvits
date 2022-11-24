@@ -35,7 +35,10 @@ class VCVITS(pl.LightningModule):
             self.hparams.train.segment_size // self.hparams.data.hop_length,
             n_speakers=self.hparams.data.n_speakers,
             **self.hparams.model)
-        self.net_period_d = MultiPeriodDiscriminator(self.hparams.model.use_spectral_norm)
+        self.net_period_d = MultiPeriodDiscriminator(
+            periods=self.hparams.model.multi_period_discriminator_periods,
+            use_spectral_norm=self.hparams.model.use_spectral_norm
+        )
         self.net_scale_d = MultiScaleDiscriminator(self.hparams.model.use_spectral_norm)
         # self.net_pitch_d = PitchDiscriminator(self.hparams.model.use_spectral_norm)
         # speaker discriminator

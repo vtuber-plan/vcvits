@@ -63,6 +63,7 @@
     "upsample_kernel_sizes": [16,16,4,4],
     "n_layers_q": 3,
     "use_spectral_norm": false,
-    "gin_channels": 256
+    "gin_channels": 256,
+    "multi_period_discriminator_periods": [2, 3, 5, 7, 11, 13, 17, 19, 23, 29, 31, 37]
   }
 }
