@@ -9,10 +9,10 @@ from torch import optim
 
 import pytorch_lightning as pl
 
-from .discriminators.multi_scale_discriminator import MultiScaleDiscriminator
-from .discriminators.multi_period_discriminator import MultiPeriodDiscriminator
+from ..model.discriminators.multi_scale_discriminator import MultiScaleDiscriminator
+from ..model.discriminators.multi_period_discriminator import MultiPeriodDiscriminator
 
-from .synthesizers.synthesizer_tts import SynthesizerTTS
+from ..model.synthesizers.synthesizer_tts import SynthesizerTTS
 
 from ..text.symbols import symbols
 from ..mel_processing import spec_to_mel_torch, mel_spectrogram_torch

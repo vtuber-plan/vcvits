@@ -2,6 +2,7 @@ import os
 import json
 import glob
 import argparse
+from typing import Optional
 import torch
 import torchaudio
 import fairseq
@@ -10,14 +11,16 @@ from torch import nn, optim
 from torch.nn import functional as F
 from torch.utils.data import DataLoader
 from vits.preprocess import preprocess
-from vits.model.vcvits import VCVITS
+from vits.light.vcvits import VCVITS
 
 import vits.utils as utils
 from vits.data.collate import VoiceConversionMultiSpeakerCollate
 
-import pytorch_lightning as pl
-from pytorch_lightning.callbacks import ModelCheckpoint
-from pytorch_lightning.profiler import SimpleProfiler, AdvancedProfiler
+import lightning.pytorch as pl
+from lightning.pytorch.callbacks import ModelCheckpoint
+from lightning.pytorch.profilers import SimpleProfiler, AdvancedProfiler
+
+import lightning_fabric
 
 from vits.hparams import HParams
 from vits.data.dataset.vc_ms import VoiceConversionMultiSpeakerDataset
@@ -33,18 +36,28 @@ def get_hparams(config_path: str) -> HParams:
     hparams = HParams(**config)
     return hparams
 
+def last_checkpoint(path: str) -> Optional[str]:
+    ckpt_path = None
+    if os.path.exists(os.path.join(path, "lightning_logs")):
+        versions = glob.glob(os.path.join(path, "lightning_logs", "version_*"))
+        if len(list(versions)) > 0:
+            last_ver = sorted(list(versions), key=lambda p: int(p.split("_")[-1]))[-1]
+            last_ckpt = os.path.join(last_ver, "checkpoints/last.ckpt")
+            if os.path.exists(last_ckpt):
+                ckpt_path = last_ckpt
+    return ckpt_path
+
 def main():
     parser = argparse.ArgumentParser()
     parser.add_argument('-c', '--config', type=str, default="./configs/48k_base.json", help='JSON file for configuration')
-    parser.add_argument('-a', '--accelerator', type=str, default="gpu", help='training device')
+    parser.add_argument('-a', '--accelerator', type=str, default="cpu", help='training device')
     parser.add_argument('-d', '--device', type=str, default="0", help='training device ids')
     parser.add_argument('-s', '--skip-preprocess', action='store_true', help='Skip preprocess')
     parser.add_argument('-cd', '--cachedir', type=str, default="./dataset_cache", help='Dataset cache')
     args = parser.parse_args()
 
     hparams = get_hparams(args.config)
-    pl.utilities.seed.seed_everything(hparams.train.seed)
-
+    lightning_fabric.utilities.seed.seed_everything(hparams.train.seed)
     cache_dir = args.cachedir if len(args.cachedir.strip()) != 0 else None
 
     if not os.path.exists(cache_dir):
@@ -96,14 +109,7 @@ def main():
     
     trainer = pl.Trainer(**trainer_params) # , profiler=profiler, max_steps=200
     # resume training
-    ckpt_path = None
-    if os.path.exists("logs/lightning_logs"):
-        versions = glob.glob("logs/lightning_logs/version_*")
-        if len(list(versions)) > 0:
-            last_ver = sorted(list(versions))[-1]
-            last_ckpt = os.path.join(last_ver, "checkpoints/last.ckpt")
-            if os.path.exists(last_ckpt):
-                ckpt_path = last_ckpt
+    ckpt_path = last_checkpoint(hparams.trainer.default_root_dir)
     trainer.fit(model=model, train_dataloaders=train_loader, val_dataloaders=valid_loader, ckpt_path=ckpt_path)
 
 if __name__ == "__main__":

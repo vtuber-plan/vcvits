@@ -1,0 +1,2 @@
+fairscale==0.4.12
+deepspeed==0.7.5

@@ -15,10 +15,10 @@ import pytorch_lightning as pl
 
 from vits.model.pipeline import SpeechConversionAudioPipeline
 
-from .discriminators.multi_scale_discriminator import MultiScaleDiscriminator
-from .discriminators.multi_period_discriminator import MultiPeriodDiscriminator
+from ..model.discriminators.multi_scale_discriminator import MultiScaleDiscriminator
+from ..model.discriminators.multi_period_discriminator import MultiPeriodDiscriminator
 
-from .synthesizers.synthesizer_svc import SynthesizerSVC
+from ..model.synthesizers.synthesizer_svc import SynthesizerSVC
 
 from ..mel_processing import spec_to_mel_torch, mel_spectrogram_torch, spectrogram_torch, spectrogram_torch_audio
 from .losses import discriminator_loss, kl_loss,feature_loss, generator_loss
